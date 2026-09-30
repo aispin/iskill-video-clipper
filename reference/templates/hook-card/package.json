@@ -1,0 +1,9 @@
+{
+  "name": "hook-card",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "npx --yes hyperframes@0.8.96 check",
+    "render": "npx --yes hyperframes@0.8.96 render"
+  }
+}

@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      /* 字体来自本 skill fonts/ 目录（模板位于 reference/templates/hook-card/，向上三级到 skill 根）。
+         拷贝模板到工作区使用时，把字体一并复制或改路径；优设标题黑为单一 Regular 字重，勿依赖 font-weight 变粗。 */
+      @font-face {
+        font-family: "YouSheBiaoTiHei";
+        src: url("../../../fonts/YouSheBiaoTiHei.ttf");
+        font-weight: 400;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body {
+        width: 1080px; height: 1920px; overflow: hidden;
+        background: #0d0d13;
+        font-family: "YouSheBiaoTiHei", sans-serif;
+      }
+      #root {
+        position: relative; width: 100%; height: 100%;
+        background: radial-gradient(120% 90% at 50% 10%, #1c1424 0%, #0d0d13 60%);
+      }
+      .accent { color: #ff3e8f; }
+
+      /* ---- 场景1：钩子卡 ---- */
+      #hook {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 28px;
+      }
+      #hook .line {
+        font-size: 110px; font-weight: 400; color: #f6f4f8;
+        letter-spacing: 0.02em; line-height: 1.25; text-align: center;
+      }
+      #hook .line .word { display: inline-block; margin: 0 10px; }
+      #hook .badge {
+        margin-top: 40px; font-size: 44px; font-weight: 400; color: #fff;
+        background: linear-gradient(90deg, #ff3e8f, #ff7ab0);
+        padding: 18px 56px; border-radius: 999px;
+        box-shadow: 0 12px 60px rgba(255, 62, 143, 0.45);
+      }
+
+      /* ---- 场景2：卖点花字卡 ---- */
+      #points {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 64px;
+      }
+      #points .pt {
+        display: flex; align-items: center; gap: 28px;
+        font-size: 72px; font-weight: 400; color: #f2eff5;
+      }
+      #points .pt .idx {
+        width: 88px; height: 88px; border-radius: 24px; flex: none;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 52px; font-weight: 400; color: #fff;
+        background: linear-gradient(135deg, #ff3e8f, #b23be0);
+      }
+      #points .pt b { color: #ff9dc2; }
+
+      /* ---- 场景3：CTA 卡 ---- */
+      #cta {
+        position: absolute; inset: 0;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 60px;
+      }
+      #cta .big {
+        font-size: 128px; font-weight: 400; color: #fff; text-align: center; line-height: 1.3;
+      }
+      #cta .btn {
+        font-size: 64px; font-weight: 400; color: #fff;
+        background: linear-gradient(90deg, #ff3e8f, #ff2e6e);
+        padding: 30px 90px; border-radius: 999px;
+        box-shadow: 0 16px 80px rgba(255, 62, 143, 0.55);
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="10"
+      data-width="1080"
+      data-height="1920"
+    >
+      <!-- 场景1：黄金3秒钩子（改文案只动 .word/.badge 文本） -->
+      <div id="hook" class="clip" data-start="0" data-duration="4" data-track-index="0">
+        <div class="line">
+          <span class="word">国庆</span><span class="word">别再</span><span class="word accent">反向挤</span>
+        </div>
+        <div class="line">
+          <span class="word">这</span><span class="word">3</span><span class="word">个</span><span class="word accent">小城</span><span class="word">人少景美</span>
+        </div>
+        <div class="badge">看到最后有彩蛋</div>
+      </div>
+
+      <!-- 场景2：卖点花字（改 .pt 文本，行数增减同步调 data-duration） -->
+      <div id="points" class="clip" data-start="4" data-duration="3" data-track-index="0">
+        <div class="pt" id="p1"><span class="idx">1</span><span><b>门票免费</b>，停车 5 块</span></div>
+        <div class="pt" id="p2"><span class="idx">2</span><span>高铁 <b>1.5h</b> 直达</span></div>
+        <div class="pt" id="p3"><span class="idx">3</span><span>人均 <b>300</b> 玩三天</span></div>
+      </div>
+
+      <!-- 场景3：CTA -->
+      <div id="cta" class="clip" data-start="7" data-duration="3" data-track-index="0">
+        <div class="big">收藏这条<br />假期直接出发</div>
+        <div class="btn" id="cta-btn">点赞关注不迷路</div>
+      </div>
+
+      <script>
+        const tl = gsap.timeline({ paused: true });
+
+        // 场景1：词逐个弹出，强调词二次放大
+        tl.from("#hook .word", { opacity: 0, y: 60, scale: 0.7, duration: 0.45, stagger: 0.18, ease: "back.out(2)" }, 0.1);
+        tl.to("#hook .accent", { scale: 1.12, color: "#ff3e8f", duration: 0.35, stagger: 0.15, ease: "power2.out" }, 1.2);
+        tl.from("#hook .badge", { opacity: 0, y: 40, duration: 0.5, ease: "power3.out" }, 2.2);
+        tl.to("#hook", { opacity: 0, y: -80, duration: 0.5, ease: "power2.in" }, 3.5);
+
+        // 场景2：卖点行依次滑入
+        tl.fromTo("#points .pt", { opacity: 0, x: 160 }, { opacity: 1, x: 0, duration: 0.5, stagger: 0.45, ease: "power3.out" }, 4.1);
+        tl.to("#points .idx", { rotate: [ -12, 0 ], duration: 0.4, ease: "back.out(3)" }, 4.2);
+        tl.to("#points", { opacity: 0, x: -120, duration: 0.45, ease: "power2.in" }, 6.55);
+
+        // 场景3：CTA 进入 + 按钮脉冲
+        tl.from("#cta .big", { opacity: 0, scale: 0.8, duration: 0.55, ease: "back.out(1.8)" }, 7.15);
+        tl.from("#cta .btn", { opacity: 0, y: 60, duration: 0.5, ease: "power3.out" }, 7.6);
+        tl.to("#cta-btn", { scale: 1.08, duration: 0.45, yoyo: true, repeat: 3, ease: "power1.inOut" }, 8.2);
+        tl.to("#cta", { opacity: 0, duration: 0.4 }, 9.6);
+
+        // 渲染器靠 window.__timelines 发现时间线；不注册 = 45s 超时后按静态帧渲染
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = tl;
+        tl.seek(0);
+      </script>
+    </div>
+  </body>
+</html>

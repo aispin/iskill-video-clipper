@@ -18,6 +18,8 @@
 - **shader 库**：`@hyperframes/shader-transitions@0.8.96`（IIFE 全局名 `HyperShader`，已本地化进模板 assets/）
 - **效果清单**（内置 14 款）：`glitch`（数字故障）、`light-leak`（暖光晕）、`cinematic-zoom`（径向变焦+色差）、`domain-warp`（熔岩扭曲）、`chromatic-split`（RGB 分离）、`swirl-vortex`（螺旋）、`whip-pan`（快甩）、`sdf-iris`（圆形虹膜）、`ripple-waves`（涟漪）、`gravitational-lens`（引力透镜）、`thermal-distortion`（热浪）、`ridged-burn`（燃烧）、`cross-warp-morph`（噪声 morph）、`flash-through-white`（白闪）
 - **不采用**：ffmpeg-gl-transition（需自编译 ffmpeg）、ffmpeg-concat（native gl 编译坑+失修）
+- **shader 行为实测注**：`cinematic-zoom` 为 dip-to-black 式（A 放大入黑→B 缩放出，中段约 0.7s 纯黑），只适合段落收束/情绪断点；连续叙事点选全帧 morph 类（`cross-warp-morph`/`domain-warp`/`swirl-vortex` 等）。新增 shader 首用务必抽中段帧看形态，不只查首尾
+- **模板库**：`templates/`（README 含使用流程与字体策略）——`shader-transition-clip`（转场片段）/ `hook-card`（片头三场景卡）/ `cover-card`（首帧即封面卡）；字体走 `../../fonts/` 相对路径，拷贝模板需同步处理字体
 
 ## 2. 集成点①：卡片内 scene 转场（钩子/花字/CTA 卡）
 
