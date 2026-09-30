@@ -44,13 +44,26 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 - **标注义务**：成片使用了 dig-media 素材时，交付信息里注明「部分素材来自 Pixabay（可商用免署名），manifest.json 可溯源」。
 - **零素材样片**：raw/、dig-media/ 全无且挖掘失败（无 key/断网）时，明确告知用户卡在哪一级并给出补救动作，不要凭空编造素材硬拼。
 - dig-media 下载是网络重活，批量走后台执行（run_in_background）。
-| 配音音轨（可选） | 用户自录音频文件 | 见下方「配音与字幕对齐」 |
 
-### 配音与字幕对齐（口播稿成片的关键，二选一）
+### 音频开关（`--audio` / `--no-audio`，**默认开**）
 
-- **用户自录**（默认，真实感最好）：拿到音频后**复用 iskill-media-transcribe 的 transcribe 阶段**（`node scripts/video-transcribe.mjs transcribe <mp3>`）把配音转成 srt——再用 srt 时间轴驱动 drawtext 字幕，字幕与语音天然对齐。装了 whisper CLI（mlx-whisper）才有逐句时间戳，只有 VoiceBox 时是整段单块时间轴，此时按口播稿段落近似切分。
-- **无配音**：BGM-only + 字幕按段落注释估时分段（每句时长≈字数/5.5 秒，段落注释间均分）。
-- TTS 配音（VoiceBox/VoiceStudio）仅在用户明确要求时用，产出后同样走上面的转写对齐链路。
+用户没表态就按开处理；`--no-audio` 或「无声版/纯画面」才关。开启时三层各自级联，**每一层失败要明说，不静默跳过**：
+
+**① 配音（台词声）级联：**
+
+1. **用户自录音频**（真实感最好）→ 复用 iskill-media-transcribe 的 transcribe 阶段转成 srt，用 srt 时间轴驱动 drawtext，字幕与语音天然对齐；装了 whisper CLI（mlx-whisper）才有逐句时间戳，只有 VoiceBox 转写时是整段单块时间轴，此时按口播稿段落近似切分
+2. **VoiceBox**（本地 TTS，`http://127.0.0.1:17493`，`VOICEBOX_URL` 可改）：
+   - 探测 `GET /profiles`；**中文稿必须 `language:"zh"`**（male/child 档案走 qwen 引擎可出中文；female preset 档案只支持 kokoro 引擎=英文音色，中文会 400「only supports engine 'kokoro', not 'qwen'」）
+   - 合成链：`POST /generate {profile_id, text, language}` → 轮询 `GET /history/{id}` 至 completed → `GET /audio/{id}` 存 WAV。qwen 引擎约 10-25s/句，**逐句合成 + 后台执行（run_in_background），并发 ≤2**
+   - 段落时长 = max(字数估时, 配音时长 + 0.3s)，配音驱动分镜节奏
+3. **VoiceStudio**（`http://localhost:3900`，`VOICESTUDIO_URL` 可改）在线则优先于 VoiceBox（MP3、更快、真人级音色）
+4. 都不可用 → 无配音出片（BGM 仍在），交付时明确说「台词无声音」及原因
+
+**② BGM 级联：** 用户指定 → 工作区 `bgm/` 目录有现成的 → 调 iskill-dig-media `music --kw "<对题英文音乐词>"` 自动挖 1 首。混音：`volume=0.15~0.2` 压在配音下 + 结尾 `afade=t=out`；**CC BY 许可的曲子要在交付信息里附署名**（manifest 里有 artist/license）。
+
+**③ 音效：** 默认跳过（Commons 音效质量杂、Pixabay 无音效 API）；用户给了 `sfx/` 目录才按段落插入。
+
+**混音管线（ffmpeg 实锤）：** 逐段视频渲染（`-an`）→ 逐段配音 `apad` 补齐段长 → 画面/配音两轨分别 concat → `amix` 混 BGM（bgm 用 `-stream_loop` 拉到全片长）→ 最终 `-c:v copy -c:a aac`。
 
 ### 输出契约
 
