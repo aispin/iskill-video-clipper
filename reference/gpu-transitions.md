@@ -18,15 +18,17 @@
 - **shader 库**：`@hyperframes/shader-transitions@0.8.96`（IIFE 全局名 `HyperShader`，已本地化进模板 assets/）
 - **效果清单**（内置 14 款）：`glitch`（数字故障）、`light-leak`（暖光晕）、`cinematic-zoom`（径向变焦+色差）、`domain-warp`（熔岩扭曲）、`chromatic-split`（RGB 分离）、`swirl-vortex`（螺旋）、`whip-pan`（快甩）、`sdf-iris`（圆形虹膜）、`ripple-waves`（涟漪）、`gravitational-lens`（引力透镜）、`thermal-distortion`（热浪）、`ridged-burn`（燃烧）、`cross-warp-morph`（噪声 morph）、`flash-through-white`（白闪）
 - **不采用**：ffmpeg-gl-transition（需自编译 ffmpeg）、ffmpeg-concat（native gl 编译坑+失修）
-- **shader 行为实测注**（e2e 全程逐帧校验 22:30）：
-  - **关键规律：shader 转场普遍有 bgColor 参与的相位，首用必须全程逐帧校验**（`select='not(mod(n\,2))'` 每 2 帧抽查全段），不能只查首尾/中段单帧——首尾干净 ≠ 中段不黑
-  - `domain-warp`：熔岩扭曲，但中后段（progress>0.85）黑色面积大（UV 撕裂露底），效果炸裂但属"重特效"
-  - `light-leak`：曝光扫亮式，窗口头部（progress<0.1）有约 4 帧黑场再转暖光
-  - `cinematic-zoom`：dip-to-black 式（A 放大入黑→B 缩放出，约 0.7s 纯黑），只适合段落收束
-  - `cross-warp-morph`：A 移出/B 移入，中途大面积露背景色
-  - `glitch`：PoC 中段验证全帧内容；全程曲线待逐帧验证
-  - **黑场对策**：黑场时长≈进度相位×窗口时长，压缩窗口（0.8~1.2s）可把闪黑压到 1-2 帧（读作闪切，爆款片常见风格）；对连续性极敏感的点先用小样逐帧校验再上正片
-- **模板库**：`templates/`（README 含使用流程与字体策略）——`shader-transition-clip`（转场片段）/ `hook-card`（片头三场景卡）/ `cover-card`（首帧即封面卡）；字体走 `../../fonts/` 相对路径，拷贝模板需同步处理字体
+- **shader 行为黑名单（2026-10-01 全量逐帧扫描定稿，`shader-scan/` 工程可复跑积累）**：
+  - **关键规律：shader 转场普遍有 bgColor 参与的相位，首用必须全程逐帧校验**，不能只查首尾/中段单帧——首尾干净 ≠ 中段不黑。扫描基准：明亮实景 A/B 帧、窗口 `time:0.15 / duration:1.7`、30fps、逐帧 YAVG 亮度（<20 判黑帧，<48 记暗带）
+  - **✅ 全净（5 款，可直接用）**：`domain-warp`（ymin 94）、`flash-through-white`（95）、`ridged-burn`（96）、`cinematic-zoom`（71）、`thermal-distortion`（69）
+  - **⛔ 尾部黑帧（6 款，bgColor 端点撕裂，需对策）**：`chromatic-split`（p 0.95-0.99 连续 2-3 帧，最重）、`cross-warp-morph`（p 0.85/0.93 零星）、`glitch`（p 0.99 单帧）、`gravitational-lens`（p 0.95）、`light-leak`（p 0.87）、`sdf-iris`（p 0.99）
+    - 对策：①连续叙事点优先换 ✅ 组；②保留使用时把 duration 末尾内缩（1.7→1.6）并精剪掉片尾 1-2 帧，或接受 1 帧闪黑（闪切风格）；③暗素材会放大黑场
+  - **💡 深暗带（3 款，不黑但暗，暗素材下可能到黑）**：`whip-pan`（p 0.75，ymin 35）、`swirl-vortex`（p 0.60-0.64，44）、`ripple-waves`（p 0.75-0.91，24）——明暗节奏本身可当爆款闪切风格用
+  - **素材相关性**：本表基准为明亮实景素材；e2e 历史上 `cinematic-zoom` 在深色卡面素材上呈 dip-to-black 长黑场——黑场深度=相位撕裂×素材明暗，换素材档后用 `shader-scan/` 复跑
+  - **e2e 历史注（2026-09-30 22:30，已被全量扫描校准）**：domain-warp 熔岩扭曲重特效、light-leak 曝光扫亮、cross-warp-morph 中途露底——与扫描表一致的保留结论，单条黑场描述以扫描表为准
+  - **黑场对策通则**：黑场时长≈进度相位×窗口时长，压缩窗口（0.8~1.2s）可把闪黑压到 1-2 帧（读作闪切）；对连续性极敏感的点先小样逐帧校验再上正片
+  - **扫描工程新契约（实锤）**：①`HyperShader.init()` 要求 **scenes.length === transitions.length + 1**（违反则 PAGEERROR、全部转场退化硬切）；②多转场长链（15 场景 14 转场）单 composition 渲染会 stall（"no frame progress"，卡在第 1 个转场窗口）——**多 shader 批量验证必须逐片段渲染**（`shader-scan/scan_loop.sh` 已实现：单 shader 单 2s 片段 → 逐帧亮度分析 → 归类 head/dip/tail）
+- **模板库**：`templates/`（README 含使用流程与字体策略）——`shader-transition-clip`（转场片段）/ `hook-card`（片头三场景卡）/ `cover-card`（首帧即封面卡，三段式配方见 `cover-style-guide.md`）；字体已本地化进各模板 `assets/`（系统字体 `local()` 声明），拷走即用
 
 ## 2. 集成点①：卡片内 scene 转场（钩子/花字/CTA 卡）
 
