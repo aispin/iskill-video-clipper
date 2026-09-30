@@ -1,6 +1,6 @@
 ---
 name: iskill-video-clipper
-description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿），双引擎：--engine local 程序化合成（默认）/ aigc-mix 混合（缺镜 AI 补）/ aigc-full 全 AI。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/（图库）→ AIGC 补镜多级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。全流程本地 ffmpeg，免费无付费环节（AIGC 档除外，计费且事前确认）。
+description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿），双引擎：--engine local 程序化合成（默认）/ aigc-mix 混合（缺镜 AI 补）/ aigc-full 全 AI。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/（图库）→ AIGC 补镜多级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。转场默认 gl 档（HyperFrames GPU shader 转场，详见 reference/gpu-transitions.md），xfade 为回退。全流程本地 ffmpeg，免费无付费环节（AIGC 档除外，计费且事前确认）。
 ---
 
 # iskill-video-clipper 实拍素材短视频剪辑
@@ -126,9 +126,10 @@ $PY ~/.workbuddy/skills/iskill-music-beats/scripts/beat_detect.py <bgm文件> --
 - 钩子段（0-3s）对齐开头第一个强拍后的落点；收尾段对齐渐弱前的强拍
 - **配音约束优先于节拍**：段落时长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)` 不变，但把结果**向上取整到 `beat_interval` 的整数倍**，两边都满足
 
-**③ xfade offset 对准节拍（Phase 4 渲染）：**
+**③ 转场卡点（Phase 4 渲染）：**
 
-xfade 的转场**中心**落在 `offset + T/2`，要转场打在节拍 `t_b` 上：
+- **gl 档（默认）**：转场=独立片段插在段间（非 xfade 重叠区），段边界落在节拍网格 + 转场片段时长=整数拍 → 转场中心天然落拍，无需 offset 计算（见下节「转场档位」）
+- **xfade（回退档）**：转场**中心**落在 `offset + T/2`，要转场打在节拍 `t_b` 上：
 
 ```
 offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
@@ -139,6 +140,20 @@ offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
 **④ 验收加一项（Phase 5）：** 抽帧检查每个转场中点帧，对照 beats.json 确认转场时刻与节拍偏差 ≤ 0.1s。验证音轨可用 `--click` 生成的节拍 blip 与成片并播对比。
 
 **⑤ 剪映草稿模式（Phase 7）同步对齐：** 段落 `start_time` 直接用节拍边界值（beats.json 的 t 就是草稿时间轴）；`add_transition_simple` 加在段边界处即天然卡点。
+
+### 转场档位（Phase 4，--transitions）
+
+**gl（默认）**：GPU shader 转场——段间转场渲染为独立「转场片段」（HyperFrames + @hyperframes/shader-transitions，WebGL 逐帧截帧）后 concat 回主链；卡片内（钩子/花字/CTA）多 scene 切换同样走 shader。**完整契约、模板与已踩坑见 `reference/gpu-transitions.md`**，要点：
+
+1. 转场点 **≤6 个/片**（每点渲染 +20~40s），优先【钩子】结束后第一转场、情绪高潮、CTA 前；其余转场点 xfade 或硬切
+2. 转场片段时长 = beat_interval 整数倍（无 BGM 1.2~2s）；shader 窗口内缩 0.15s（`time:0.15, duration:T-0.3`），首尾各留纯 A/纯 B 帧保证 concat 连续
+3. 模板：`reference/templates/shader-transition-clip/`（换 frameA/frameB/shader 名三处即可）；渲染 `npm run render`（需代理）
+4. 每个转场片段交付前抽首尾帧与 A/B 对比校验；不干净的 shader 换掉
+5. 转场片段在 concat 前与相邻段归一编码（libx264/yuv420p/30fps/crf18），`-f concat -c copy` 硬拼
+
+**xfade（回退）**：无 Chrome/WebGL 环境、用户点名「快速出片」、或 GL 渲染重试 1 次仍失败时按点降级使用（单点降级不打回整片，交付注明）。**none**：硬切。
+
+gl 档成本提示：GL 转场渲染显著慢于 xfade（xfade 近零成本），交付信息注明用了几个 GL 点及渲染耗时。
 
 ### 输出契约
 

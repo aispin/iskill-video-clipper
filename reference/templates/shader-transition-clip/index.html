@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/gsap.min.js"></script>
+    <script src="assets/shader-transitions.global.js"></script>
+    <style>
+      /* GPU 转场片段模板：A段尾帧 → shader → B段首帧
+         生成脚本替换三处：① assets/frameA.png / frameB.png ② data-duration=T ③ shader 名与窗口参数
+         契约见 ../../gpu-transitions.md */
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1080px; height: 1920px; overflow: hidden; background: #000; }
+      .scene { position: absolute; inset: 0; }
+      .scene img { width: 1080px; height: 1920px; object-fit: cover; display: block; }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="2"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div id="sa" class="scene"><img src="assets/frameA.png" /></div>
+      <div id="sb" class="scene"><img src="assets/frameB.png" /></div>
+
+      <script>
+        const tl = gsap.timeline({ paused: true });
+        // 关键：init() 不会自己注册时间线，必须手动挂到 window.__timelines
+        window.__timelines = window.__timelines || {};
+        window.__timelines["main"] = HyperShader.init({
+          bgColor: "#000000",
+          scenes: ["sa", "sb"],
+          transitions: [
+            // 窗口内缩 0.15s：首尾各留纯 A / 纯 B 帧，保证 concat 拼接连续（shader 端点可能有残留）
+            { time: 0.15, shader: "domain-warp", duration: 1.7, ease: "none" },
+          ],
+          timeline: tl,
+        });
+      </script>
+    </div>
+  </body>
+</html>
