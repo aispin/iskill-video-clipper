@@ -1,6 +1,6 @@
 ---
 name: iskill-video-clipper
-description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿）。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/ → 自动调 iskill-dig-media 网络挖掘三级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。全流程本地 ffmpeg，免费无付费环节。
+description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿），双引擎：--engine local 程序化合成（默认）/ aigc-mix 混合（缺镜 AI 补）/ aigc-full 全 AI。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/（图库）→ AIGC 补镜多级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。全流程本地 ffmpeg，免费无付费环节（AIGC 档除外，计费且事前确认）。
 ---
 
 # iskill-video-clipper 实拍素材短视频剪辑
@@ -11,6 +11,11 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 六步爆款工作流：[1]选题(hot-topic-scout) → [2]拆解(viral-teardown) → [3]文案(viral-copywriter)
 → [4]去AI味+点评(copy-deslop) → [5]预检(content-precheck) → [6]成片/剪映草稿(本skill)
 ```
+
+**素材引擎三档（--engine，只决定「画面从哪来」，剪辑管线完全共用）**：
+- `local`（默认）：实拍 + 图库，全免费，现状流程
+- `aigc-mix`：免费素材优先，缺的镜头按 iskill-dig-media「AI 生成供给」协议补（计费、事前确认）
+- `aigc-full`：无实拍，口播稿逐段 prompt 化全量 AI 生成（计费最高、必须逐次确认）
 
 ## 接入五步工作流（第 6 步契约）
 
@@ -24,11 +29,13 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 | 预检报告 | `viral-video-team-output/文案/*-预检.md` | 结论必须是 ✅放行 或 ⚠️改后放行（已复检）；❌打回的不接单 |
 | 素材 | 按下方「素材决策树」定位 | 照片+视频混合照常走 Phase 1 侦察；按口播稿段落语义选片（【价值】段的句子配对应素材镜头） |
 
-### 素材决策树（不提供素材目录也能出片，三级回退）
+### 素材决策树（不提供素材目录也能出片，多级回退 + 引擎档位）
+
+**引擎档位（--engine）**：用户说「AIGC 出片」「AI 生成镜头」→ aigc-mix；「全 AI 出片」「纯 AI 生成」→ aigc-full；没提 AI 一律 local。用户用了 AI 关键词但档位模糊时，AskUserQuestion 确认并**报 credit 成本测算**。
 
 ```
 用户指定了素材目录？
-├─ 是 → 直接用
+├─ 是 → 直接用（aigc-mix/full 下仍可对空缺镜头 AI 补镜）
 └─ 否 → 工作区有 raw/ 目录且含音视频/照片？
         ├─ 是 → 用 raw/（优先自家实拍素材）
         └─ 否 → 工作区有 dig-media/ 目录且含可用素材？
@@ -38,12 +45,20 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
                            中文关键词翻成 2-4 组英文查询词（如「晒秋」→ autumn harvest / drying crops）
                         2. 每个段落语义挖 2-3 条，竖屏成片加 --min-width 1280
                         3. 素材落 dig-media/<关键词>/，沿用 manifest.json
+                        4. 【按引擎档位】挖掘后仍有缺口：
+                           ├─ local     → 到此为止，如实告知卡在哪一级（零素材样片规则）
+                           ├─ aigc-mix  → 按 iskill-dig-media「AI 生成供给」协议补镜
+                           │              （锚帧优先：关键叙事镜 ImageGen 锚帧→图生视频；空镜直接文生视频；
+                           │               事前报 credits 估算并获用户确认，缓存查重防重复计费）
+                           └─ aigc-full → 跳过图库直接全量 AI 生成：
+                                          口播稿逐段 prompt 化（统一 style 后缀）→ 锚帧 → VideoGen
 ```
 
 - **混用规则**：raw/ 素材优先入片，dig-media/ 补空缺镜头（空镜/氛围镜最适合用网络素材）。
 - **标注义务**：成片使用了 dig-media 素材时，交付信息里注明「部分素材来自 Pixabay（可商用免署名），manifest.json 可溯源」。
-- **零素材样片**：raw/、dig-media/ 全无且挖掘失败（无 key/断网）时，明确告知用户卡在哪一级并给出补救动作，不要凭空编造素材硬拼。
+- **零素材样片**：`--engine local` 下 raw/、dig-media/ 全无且挖掘失败时，明确告知用户卡在哪一级并给出补救动作（含「可改用 --engine aigc-mix 让 AI 补镜」的提示），不要凭空编造素材硬拼。
 - dig-media 下载是网络重活，批量走后台执行（run_in_background）。
+- **AIGC 镜头使用边界**：AI 镜头落盘 `dig-media/ai-<slug>/`，分镜表记录每镜的 prompt 与素材路径映射；交付信息注明「部分画面为 AI 生成」+ credits 估算（manifest 可溯源）。真实感选题（纪实/人物/手作）把 AI 镜头限定在空镜/氛围/转场镜。
 
 ### 音频开关（`--audio` / `--no-audio`，**默认开**）
 
@@ -201,6 +216,8 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - 标题/落款/LOGO 位置
 - 镜头顺序与分镜表一致（**照片文件名↔内容映射极易记错，验收抓错位**——本项目实锤：221810 被错记为贴花，实为打糍粑）
 - Ken Burns 是否在动、压模/特写段是否对准时间点
+- **有 BGM 时**：转场中点帧对照 beats.json，卡点偏差 ≤ 0.1s
+- **AIGC 镜头（aigc-mix/full）**：抽帧看风格一致性（色调/光影是否与整片协调，锚帧镜头是否漂移成另一风格）；不协调的镜头换 prompt 重生成（重计费，需用户确认）或 dig-media 图库替换
 
 ## Phase 6 交付
 
