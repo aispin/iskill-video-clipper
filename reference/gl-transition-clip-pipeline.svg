@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <rect width="1080" height="560" fill="#12141c"/>
+  <text x="540" y="42" text-anchor="middle" fill="#e6e9f2" font-size="22" font-weight="700">段间 GL 转场片段子管线（每个转场点）</text>
+
+  <!-- 6 步管线 -->
+  <!-- 1 抽帧 -->
+  <rect x="30" y="80" width="160" height="110" rx="12" fill="#181d2a" stroke="#3a4256"/>
+  <text x="110" y="108" text-anchor="middle" fill="#7fb3ff" font-size="15" font-weight="700">① 抽帧</text>
+  <text x="110" y="132" text-anchor="middle" fill="#aab4cc" font-size="12">A 段末尾帧</text>
+  <text x="110" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">B 段首帧</text>
+  <text x="110" y="176" text-anchor="middle" fill="#6f7a92" font-size="11" font-family="monospace">ffmpeg -ss … -frames:v 1</text>
+  <line x1="190" y1="135" x2="215" y2="135" stroke="#5b8def" stroke-width="2" marker-end="url(#ar)"/>
+
+  <!-- 2 模板 -->
+  <rect x="218" y="80" width="160" height="110" rx="12" fill="#181d2a" stroke="#3a4256"/>
+  <text x="298" y="108" text-anchor="middle" fill="#7fb3ff" font-size="15" font-weight="700">② 模板</text>
+  <text x="298" y="132" text-anchor="middle" fill="#aab4cc" font-size="12">替换 frameA / frameB</text>
+  <text x="298" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">改 shader 名与窗口</text>
+  <text x="298" y="176" text-anchor="middle" fill="#6f7a92" font-size="11" font-family="monospace">time:0.15, duration:T-0.3</text>
+  <line x1="378" y1="135" x2="403" y2="135" stroke="#5b8def" stroke-width="2"/>
+
+  <!-- 3 渲染 -->
+  <rect x="406" y="80" width="160" height="110" rx="12" fill="#181d2a" stroke="#5b8def" stroke-width="1.5"/>
+  <text x="486" y="108" text-anchor="middle" fill="#7fb3ff" font-size="15" font-weight="700">③ 渲染</text>
+  <text x="486" y="132" text-anchor="middle" fill="#aab4cc" font-size="12">HyperFrames GPU 截帧</text>
+  <text x="486" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">约 20-40s / 点</text>
+  <text x="486" y="176" text-anchor="middle" fill="#6f7a92" font-size="11" font-family="monospace">https_proxy=…:10080</text>
+  <line x1="566" y1="135" x2="591" y2="135" stroke="#5b8def" stroke-width="2"/>
+
+  <!-- 4 校验 -->
+  <rect x="594" y="80" width="160" height="110" rx="12" fill="#181d2a" stroke="#e06c75" stroke-width="1.5"/>
+  <text x="674" y="108" text-anchor="middle" fill="#f28b93" font-size="15" font-weight="700">④ 首尾帧校验</text>
+  <text x="674" y="132" text-anchor="middle" fill="#aab4cc" font-size="12">n=0 ≈ frameA？</text>
+  <text x="674" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">n=末 ≈ frameB？</text>
+  <text x="674" y="176" text-anchor="middle" fill="#6f7a92" font-size="11">hstack 并排对比，不干净→换 shader</text>
+  <line x1="754" y1="135" x2="779" y2="135" stroke="#5b8def" stroke-width="2"/>
+
+  <!-- 5 归一 -->
+  <rect x="782" y="80" width="160" height="110" rx="12" fill="#181d2a" stroke="#3a4256"/>
+  <text x="862" y="108" text-anchor="middle" fill="#7fb3ff" font-size="15" font-weight="700">⑤ 归一编码</text>
+  <text x="862" y="132" text-anchor="middle" fill="#aab4cc" font-size="12">libx264 / yuv420p</text>
+  <text x="862" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">30fps / crf 18</text>
+  <text x="862" y="176" text-anchor="middle" fill="#6f7a92" font-size="11">否则 concat -c copy 花屏</text>
+  <line x1="942" y1="135" x2="967" y2="135" stroke="#5b8def" stroke-width="2"/>
+
+  <!-- 6 拼接 -->
+  <rect x="970" y="80" width="80" height="110" rx="12" fill="#181d2a" stroke="#3a4256"/>
+  <text x="1010" y="108" text-anchor="middle" fill="#7fb3ff" font-size="15" font-weight="700">⑥</text>
+  <text x="1010" y="130" text-anchor="middle" fill="#7fb3ff" font-size="14" font-weight="700">concat</text>
+  <text x="1010" y="152" text-anchor="middle" fill="#aab4cc" font-size="12">segA →</text>
+  <text x="1010" y="172" text-anchor="middle" fill="#aab4cc" font-size="12">trans →</text>
+  <text x="1010" y="192" text-anchor="middle" fill="#aab4cc" font-size="12">segB</text>
+
+  <!-- 接缝示意 -->
+  <rect x="30" y="230" width="1020" height="130" rx="12" fill="#141a26" stroke="#3a4256"/>
+  <text x="540" y="258" text-anchor="middle" fill="#aab4cc" font-size="14" font-weight="700">拼接结构（窗口内缩保证接缝连续）</text>
+  <!-- segA -->
+  <rect x="80" y="276" width="330" height="60" rx="8" fill="#223046"/>
+  <text x="245" y="302" text-anchor="middle" fill="#9fc4ff" font-size="13">segA（主链素材段）</text>
+  <text x="245" y="322" text-anchor="middle" fill="#6f7a92" font-size="11">末帧 = 纯 A</text>
+  <!-- trans -->
+  <rect x="410" y="276" width="260" height="60" rx="8" fill="#332b1c" stroke="#e8a13c"/>
+  <text x="540" y="302" text-anchor="middle" fill="#f0c98a" font-size="13">GL 转场片段</text>
+  <text x="540" y="322" text-anchor="middle" fill="#b39464" font-size="11">[0.15s 纯A] shader窗口 [0.15s 纯B]</text>
+  <!-- segB -->
+  <rect x="670" y="276" width="330" height="60" rx="8" fill="#223046"/>
+  <text x="835" y="302" text-anchor="middle" fill="#9fc4ff" font-size="13">segB（主链素材段）</text>
+  <text x="835" y="322" text-anchor="middle" fill="#6f7a92" font-size="11">首帧 = 纯 B</text>
+  <!-- seam marks -->
+  <circle cx="410" cy="306" r="6" fill="#e06c75"/>
+  <circle cx="670" cy="306" r="6" fill="#e06c75"/>
+  <text x="410" y="362" text-anchor="middle" fill="#d98a94" font-size="12">接缝1：纯A ↔ 纯A 连续 ✓</text>
+  <text x="670" y="362" text-anchor="middle" fill="#d98a94" font-size="12">接缝2：纯B ↔ 纯B 连续 ✓</text>
+
+  <!-- 节拍约束 -->
+  <rect x="30" y="390" width="1020" height="140" rx="12" fill="#141a26" stroke="#3a4256"/>
+  <text x="540" y="418" text-anchor="middle" fill="#aab4cc" font-size="14" font-weight="700">节拍与用量约束（复用 iskill-music-beats 卡点契约）</text>
+  <rect x="70" y="438" width="300" height="70" rx="10" fill="#1e2433"/>
+  <text x="220" y="466" text-anchor="middle" fill="#d5dcec" font-size="13">转场片段时长 = beat_interval 整数倍</text>
+  <text x="220" y="490" text-anchor="middle" fill="#8b94ab" font-size="12">段边界落节拍网格 → 转场中心天然落拍</text>
+  <rect x="390" y="438" width="300" height="70" rx="10" fill="#1e2433"/>
+  <text x="540" y="466" text-anchor="middle" fill="#d5dcec" font-size="13">全片 GL 点 ≤ 6 个</text>
+  <text x="540" y="490" text-anchor="middle" fill="#8b94ab" font-size="12">钩子后首转场 &gt; 情绪高潮边界 &gt; CTA 前；其余 xfade/硬切</text>
+  <rect x="710" y="438" width="300" height="70" rx="10" fill="#1e2433"/>
+  <text x="860" y="466" text-anchor="middle" fill="#d5dcec" font-size="13">验收偏差 ≤ 0.1s</text>
+  <text x="860" y="490" text-anchor="middle" fill="#8b94ab" font-size="12">转场中心帧对照 beats.json（Phase 5 沿用）</text>
+</svg>

@@ -143,7 +143,7 @@ offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
 
 ### 转场档位（Phase 4，--transitions）
 
-**gl（默认）**：GPU shader 转场——段间转场渲染为独立「转场片段」（HyperFrames + @hyperframes/shader-transitions，WebGL 逐帧截帧）后 concat 回主链；卡片内（钩子/花字/CTA）多 scene 切换同样走 shader。**完整契约、模板与已踩坑见 `reference/gpu-transitions.md`**，要点：
+**gl（默认）**：GPU shader 转场——段间转场渲染为独立「转场片段」（HyperFrames + @hyperframes/shader-transitions，WebGL 逐帧截帧）后 concat 回主链；卡片内（钩子/花字/CTA）多 scene 切换同样走 shader。**完整契约、架构图（整合地图 + 段间转场片段管线）、模板与已踩坑见 `reference/gpu-transitions.md`**，要点：
 
 1. 转场点 **≤6 个/片**（每点渲染 +20~40s），优先【钩子】结束后第一转场、情绪高潮、CTA 前；其余转场点 xfade 或硬切
 2. 转场片段时长 = beat_interval 整数倍（无 BGM 1.2~2s）；shader 窗口内缩 0.15s（`time:0.15, duration:T-0.3`），首尾各留纯 A/纯 B 帧保证 concat 连续

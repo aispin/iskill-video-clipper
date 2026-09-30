@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 620" font-family="'PingFang SC','Microsoft YaHei',sans-serif">
+  <rect width="1080" height="620" fill="#12141c"/>
+  <text x="540" y="42" text-anchor="middle" fill="#e6e9f2" font-size="22" font-weight="700">iskill-video-clipper · GPU Shader 转场整合地图（gl 档 = 默认）</text>
+
+  <!-- 入口 -->
+  <rect x="390" y="66" width="300" height="44" rx="10" fill="#1e2433" stroke="#5b8def" stroke-width="1.5"/>
+  <text x="540" y="94" text-anchor="middle" fill="#e6e9f2" font-size="16">用户：「酷炫/电影感转场」</text>
+  <line x1="540" y1="110" x2="540" y2="136" stroke="#5b8def" stroke-width="1.5"/>
+
+  <!-- 档位层 -->
+  <rect x="290" y="136" width="500" height="56" rx="10" fill="#1a2030" stroke="#3a4256"/>
+  <text x="540" y="160" text-anchor="middle" fill="#aab4cc" font-size="13">--transitions 档位</text>
+  <rect x="310" y="166" width="140" height="20" rx="6" fill="#2a3550"/>
+  <text x="380" y="180" text-anchor="middle" fill="#7fb3ff" font-size="12" font-weight="700">gl（默认）</text>
+  <rect x="470" y="166" width="140" height="20" rx="6" fill="#232a38"/>
+  <text x="540" y="180" text-anchor="middle" fill="#9aa4ba" font-size="12">xfade（回退）</text>
+  <rect x="630" y="166" width="140" height="20" rx="6" fill="#232a38"/>
+  <text x="700" y="180" text-anchor="middle" fill="#9aa4ba" font-size="12">none（硬切）</text>
+
+  <!-- 分叉 -->
+  <line x1="440" y1="192" x2="270" y2="240" stroke="#5b8def" stroke-width="1.5"/>
+  <line x1="640" y1="192" x2="810" y2="240" stroke="#5b8def" stroke-width="1.5"/>
+
+  <!-- 集成点① -->
+  <rect x="60" y="240" width="420" height="200" rx="12" fill="#181d2a" stroke="#5b8def" stroke-width="1.5"/>
+  <text x="270" y="268" text-anchor="middle" fill="#7fb3ff" font-size="16" font-weight="700">集成点① 卡片内 scene 转场</text>
+  <text x="270" y="290" text-anchor="middle" fill="#8b94ab" font-size="12">钩子卡 / 花字卡 / CTA 卡的多 scene 切换</text>
+  <rect x="90" y="306" width="360" height="34" rx="8" fill="#1e2433"/>
+  <text x="270" y="328" text-anchor="middle" fill="#d5dcec" font-size="13">HyperFrames composition（多 scene）</text>
+  <line x1="270" y1="340" x2="270" y2="356" stroke="#5b8def" stroke-width="1.5"/>
+  <rect x="90" y="356" width="360" height="34" rx="8" fill="#1e2433"/>
+  <text x="270" y="378" text-anchor="middle" fill="#d5dcec" font-size="13" font-family="monospace">window.__timelines["main"] = HyperShader.init(...)</text>
+  <line x1="270" y1="390" x2="270" y2="406" stroke="#5b8def" stroke-width="1.5"/>
+  <rect x="90" y="406" width="360" height="22" rx="6" fill="#223046"/>
+  <text x="270" y="421" text-anchor="middle" fill="#9fc4ff" font-size="12">scenes + transitions 配置即得 glitch / light-leak 等</text>
+
+  <!-- 集成点② -->
+  <rect x="600" y="240" width="420" height="200" rx="12" fill="#181d2a" stroke="#e8a13c" stroke-width="1.5"/>
+  <text x="810" y="268" text-anchor="middle" fill="#f0b45c" font-size="16" font-weight="700">集成点② 段间转场片段（核心增量）</text>
+  <text x="810" y="290" text-anchor="middle" fill="#8b94ab" font-size="12">主链素材段 A → B 之间的 GL 转场</text>
+  <rect x="630" y="306" width="360" height="34" rx="8" fill="#1e2433"/>
+  <text x="810" y="328" text-anchor="middle" fill="#d5dcec" font-size="13">模板：reference/templates/shader-transition-clip/</text>
+  <line x1="810" y1="340" x2="810" y2="356" stroke="#e8a13c" stroke-width="1.5"/>
+  <rect x="630" y="356" width="360" height="34" rx="8" fill="#1e2433"/>
+  <text x="810" y="378" text-anchor="middle" fill="#d5dcec" font-size="13">A尾帧 → shader → B首帧，渲染独立小 mp4</text>
+  <line x1="810" y1="390" x2="810" y2="406" stroke="#e8a13c" stroke-width="1.5"/>
+  <rect x="630" y="406" width="360" height="22" rx="6" fill="#332b1c"/>
+  <text x="810" y="421" text-anchor="middle" fill="#f0c98a" font-size="12">concat 硬拼回主链（首尾纯 A/B 帧，接缝连续）</text>
+
+  <!-- 汇合到底座 -->
+  <line x1="270" y1="440" x2="400" y2="480" stroke="#5b8def" stroke-width="1.5"/>
+  <line x1="810" y1="440" x2="680" y2="480" stroke="#e8a13c" stroke-width="1.5"/>
+  <rect x="240" y="480" width="600" height="52" rx="10" fill="#141b29" stroke="#3a4256"/>
+  <text x="540" y="502" text-anchor="middle" fill="#d5dcec" font-size="14" font-weight="700">底座：HyperFrames CLI（headless Chrome GPU 截帧）</text>
+  <text x="540" y="522" text-anchor="middle" fill="#8b94ab" font-size="12">@hyperframes/shader-transitions@0.8.96 · WebGL 合成 · 内置 14 款 shader · WebGL 缺失自动降级</text>
+
+  <!-- 不采用 -->
+  <rect x="240" y="556" width="600" height="40" rx="10" fill="#1c1418" stroke="#7a3b45" stroke-dasharray="5 4"/>
+  <text x="540" y="581" text-anchor="middle" fill="#d98a94" font-size="13">✕ 不采用：ffmpeg-gl-transition（自编译 ffmpeg）· ffmpeg-concat（native gl 编译坑 + 失修）</text>
+
+</svg>

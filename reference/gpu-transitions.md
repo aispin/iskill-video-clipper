@@ -3,6 +3,15 @@
 > 2026-09-30 PoC 全通：卡片内转场（transitions-demo）+ 段间转场片段（transition-clip）+ concat 接缝帧校验。
 > 用户决策：**gl 档为默认**（xfade 视觉不够理想，降级为回退）；xfade 公式保留见 SKILL.md ③。
 
+## 0. 架构总览
+
+![GPU Shader 转场整合地图](./gpu-shader-integration-map.svg)
+
+- 左路（集成点①）管**卡片内部**的 scene 切换，右路（集成点②）管**主链素材段之间**的转场，两者共用同一 HyperFrames 渲染底座，互不干扰
+- 段间转场片段的六步子管线与节拍约束见下图 / 第 3、4 节：
+
+![段间 GL 转场片段子管线](./gl-transition-clip-pipeline.svg)
+
 ## 1. 技术底座（已验证）
 
 - **渲染器**：HyperFrames CLI（`npx --yes hyperframes@0.8.96 render`，headless Chrome GPU 截帧，10s@30fps ≈ 33s）
