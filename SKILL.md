@@ -148,7 +148,7 @@ offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
 1. 转场点 **≤6 个/片**（每点渲染 +20~40s），优先【钩子】结束后第一转场、情绪高潮、CTA 前；其余转场点 xfade 或硬切
 2. 转场片段时长 = beat_interval 整数倍（无 BGM 1.2~2s）；shader 窗口内缩 0.15s（`time:0.15, duration:T-0.3`），首尾各留纯 A/纯 B 帧保证 concat 连续
 3. 模板库：`reference/templates/`（README 有使用流程）——`shader-transition-clip/`（转场片段，换 frameA/frameB/shader 名三处即可）、`hook-card/`（片头钩子+花字+CTA 三场景卡，10s）、`cover-card/`（首帧即封面卡，3s，`ffmpeg -ss 0` 抽封面）；渲染 `npm run render`（需代理）
-4. 每个转场片段交付前抽首尾帧与 A/B 对比校验；不干净的 shader 换掉。**shader 行为注意**：cinematic-zoom 中段有黑场（dip-to-black 式），只适合段落收束，连续叙事点用 cross-warp-morph/domain-warp 等全帧 morph 类
+4. 每个转场片段交付前抽首尾帧与 A/B 对比校验；不干净的 shader 换掉。**shader 行为注意**（e2e 实测）：shader 转场普遍有 bgColor 参与相位（domain-warp 尾段撕裂露黑、light-leak 头段曝光黑场、cinematic-zoom/cross-warp-morph 长黑场）——首用 shader 必须**全程逐帧抽查**（`select='not(mod(n\,2))'`）；黑场压不满 1-2 帧时缩窗口（0.8~1.2s）读作闪切，或换 shader
 5. 转场片段在 concat 前与相邻段归一编码（libx264/yuv420p/30fps/crf18），`-f concat -c copy` 硬拼
 
 **xfade（回退）**：无 Chrome/WebGL 环境、用户点名「快速出片」、或 GL 渲染重试 1 次仍失败时按点降级使用（单点降级不打回整片，交付注明）。**none**：硬切。

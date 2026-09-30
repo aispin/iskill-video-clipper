@@ -18,7 +18,14 @@
 - **shader 库**：`@hyperframes/shader-transitions@0.8.96`（IIFE 全局名 `HyperShader`，已本地化进模板 assets/）
 - **效果清单**（内置 14 款）：`glitch`（数字故障）、`light-leak`（暖光晕）、`cinematic-zoom`（径向变焦+色差）、`domain-warp`（熔岩扭曲）、`chromatic-split`（RGB 分离）、`swirl-vortex`（螺旋）、`whip-pan`（快甩）、`sdf-iris`（圆形虹膜）、`ripple-waves`（涟漪）、`gravitational-lens`（引力透镜）、`thermal-distortion`（热浪）、`ridged-burn`（燃烧）、`cross-warp-morph`（噪声 morph）、`flash-through-white`（白闪）
 - **不采用**：ffmpeg-gl-transition（需自编译 ffmpeg）、ffmpeg-concat（native gl 编译坑+失修）
-- **shader 行为实测注**：`cinematic-zoom` 为 dip-to-black 式（A 放大入黑→B 缩放出，中段约 0.7s 纯黑），只适合段落收束/情绪断点；连续叙事点选全帧 morph 类（`cross-warp-morph`/`domain-warp`/`swirl-vortex` 等）。新增 shader 首用务必抽中段帧看形态，不只查首尾
+- **shader 行为实测注**（e2e 全程逐帧校验 22:30）：
+  - **关键规律：shader 转场普遍有 bgColor 参与的相位，首用必须全程逐帧校验**（`select='not(mod(n\,2))'` 每 2 帧抽查全段），不能只查首尾/中段单帧——首尾干净 ≠ 中段不黑
+  - `domain-warp`：熔岩扭曲，但中后段（progress>0.85）黑色面积大（UV 撕裂露底），效果炸裂但属"重特效"
+  - `light-leak`：曝光扫亮式，窗口头部（progress<0.1）有约 4 帧黑场再转暖光
+  - `cinematic-zoom`：dip-to-black 式（A 放大入黑→B 缩放出，约 0.7s 纯黑），只适合段落收束
+  - `cross-warp-morph`：A 移出/B 移入，中途大面积露背景色
+  - `glitch`：PoC 中段验证全帧内容；全程曲线待逐帧验证
+  - **黑场对策**：黑场时长≈进度相位×窗口时长，压缩窗口（0.8~1.2s）可把闪黑压到 1-2 帧（读作闪切，爆款片常见风格）；对连续性极敏感的点先用小样逐帧校验再上正片
 - **模板库**：`templates/`（README 含使用流程与字体策略）——`shader-transition-clip`（转场片段）/ `hook-card`（片头三场景卡）/ `cover-card`（首帧即封面卡）；字体走 `../../fonts/` 相对路径，拷贝模板需同步处理字体
 
 ## 2. 集成点①：卡片内 scene 转场（钩子/花字/CTA 卡）
