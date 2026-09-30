@@ -112,6 +112,9 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - **Ken Burns 防抖**：先 `scale=2160:3840`（2x 超采样）再 `zoompan=...s=1080x1920`，直接在小图上 zoompan 会抖
 - **zoompan 表达式**：in: `min(1+0.14*on/{frames},1.14)`；out: `max(1.14-0.14*on/{frames},1.0)`；居中 `x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`
 - **中文 drawtext**：文本写入临时文件用 `textfile=`（彻底避开转义地狱），定时用 `enable='between(t,a,b)'`
+- **⚠️ drawtext 引擎实锤（2026-09-30）**：本机 `/opt/homebrew/bin/ffmpeg` 无 drawtext（构建缺 freetype，有 drawgrid）！渲染字幕必须用 imageio-ffmpeg 静态构建：
+  `/Users/lv/.workbuddy/binaries/python/envs/default/lib/python3.13/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`（drawtext/libx264 齐全）。用前先 `-filters | grep drawtext` 验一下。
+- **超长句换行**：drawtext 不自动折行，>16 字的句子在 textfile 里手动 `\n` 断行（一行 ≤16 字，fontsize 52 @ 1080 宽）
 - **字幕样式**：白字 + `box=1:boxcolor=black@0.34:boxborderw=18` 半透明底条（视频号风格）
 - **逐镜头编码再 concat**：concat demuxer 要求参数完全一致（同分辨率/帧率/编码），先统一 `fps=25, format=yuv420p` 再拼
 - **BGM**：`-stream_loop 50 -i bgm.m4a` + `atrim=0:总长,afade=t=out:st=总长-1.8:d=1.8,volume=0.9`
