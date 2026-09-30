@@ -128,7 +128,15 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - **⚠️ drawtext 引擎实锤（2026-09-30）**：本机 `/opt/homebrew/bin/ffmpeg` 无 drawtext（构建缺 freetype，有 drawgrid）！渲染字幕必须用 imageio-ffmpeg 静态构建：
   `/Users/lv/.workbuddy/binaries/python/envs/default/lib/python3.13/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`（drawtext/libx264 齐全）。用前先 `-filters | grep drawtext` 验一下。
 - **超长句换行**：drawtext 不自动折行，>16 字的句子在 textfile 里手动 `\n` 断行（一行 ≤16 字，fontsize 52 @ 1080 宽）
-- **字幕样式**：白字 + `box=1:boxcolor=black@0.34:boxborderw=18` 半透明底条（视频号风格）
+- **字幕要有设计感（2026-09-30 实锤，三层）**：
+  1. **底部渐变压条**：`geq=r=0:g=0:b=0:a=153*Y/359` 生成 1080x360 透明→黑渐变 png，成片级 `overlay=0:main_h-overlay_h` 全程压底（综艺感，字幕不再浮在画面上）
+  2. **描边+阴影替代灰底框**：`borderw=4:bordercolor=black@0.88:shadowcolor=black@0.55:shadowx=2:shadowy=3`，比 box 底条通透
+  3. **强调句分层**：钩子/金句用金色 `0xFFC93C` + 62 号，普通句白色 54 号；每句 `alpha='if(lt(t,a+0.25),(t-a)/0.25,1)'` 淡入
+- **照片素材必须动（Ken Burns，工作流管线版）**：`-loop 1 -t dur` 输入 → `scale=2160:3840...crop=2160:3840`（2x 超采样防抖）→ `zoompan=z='min(1+0.10*on/F,1.10)'`（推近）或 `z='max(1.10-0.10*on/F,1.0)'`（拉远），`x/y` 居中，`d=1:s=1080x1920:fps=25`，F=25*段长；相邻段交替 in/out
+- **视频段慢平移微动效**：1.15x 放大（`scale=1242:2208`）+ 动画 crop `crop=1080:1920:x='(iw-ow)*min(t/DUR,1)':y='(ih-oh)/2'`（crop 支持 t 表达式，左右轮换；比 zoompan 稳，无抖动）
+- **场景转场（concat 硬切的原罪解法）**：xfade 链——`[v0][v1]xfade=transition=fade:duration=0.4:offset=D0-0.4[vx1]`，`offset_k = Σ前k段时长 - k×转场时长`，链到最后一层；**音频必须同步 acrossfade 同参数**，否则画面字幕与配音漂移。转场类型对调性选：fade/dissolve 平缓、smoothleft/right 干净、zoomin 收尾有力
+- **⚠️ 转场与配音的协调铁律**：转场吃掉每段首尾各 T/2 的重叠区——每段音轨必须 `adelay=500`（头垫）+ `apad`（尾垫），保证**人声不进转场区**（头垫 ≥ 转场时长 + 0.1s）；段长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)`
+- **字幕样式**：白字 + `box=1:boxcolor=black@0.34:boxborderw=18` 半透明底条（快速档；有设计感用上面三层方案）
 - **逐镜头编码再 concat**：concat demuxer 要求参数完全一致（同分辨率/帧率/编码），先统一 `fps=25, format=yuv420p` 再拼
 - **BGM**：`-stream_loop 50 -i bgm.m4a` + `atrim=0:总长,afade=t=out:st=总长-1.8:d=1.8,volume=0.9`
 - **LOGO**：RGBA png `scale=150:150,colorchannelmixer=aa=0.78` + overlay 右上角，单帧输入 overlay 自动 repeat
