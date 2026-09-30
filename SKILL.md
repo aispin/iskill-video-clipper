@@ -1,6 +1,6 @@
 ---
 name: iskill-video-clipper
-description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿）。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/ → 自动调 iskill-dig-media 网络挖掘三级回退。全流程本地 ffmpeg，免费无付费环节。
+description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿）。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/ → 自动调 iskill-dig-media 网络挖掘三级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。全流程本地 ffmpeg，免费无付费环节。
 ---
 
 # iskill-video-clipper 实拍素材短视频剪辑
@@ -59,11 +59,45 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 3. **VoiceStudio**（`http://localhost:3900`，`VOICESTUDIO_URL` 可改）在线则优先于 VoiceBox（MP3、更快、真人级音色）
 4. 都不可用 → 无配音出片（BGM 仍在），交付时明确说「台词无声音」及原因
 
-**② BGM 级联：** 用户指定 → 工作区 `bgm/` 目录有现成的 → 调 iskill-dig-media `music --kw "<对题英文音乐词>"` 自动挖 1 首。混音：`volume=0.15~0.2` 压在配音下 + 结尾 `afade=t=out`；**CC BY 许可的曲子要在交付信息里附署名**（manifest 里有 artist/license）。
+**② BGM 级联：** 用户指定 → 工作区 `bgm/` 目录有现成的 → 调 iskill-dig-media `music --kw "<对题英文音乐词>"` 自动挖 1 首。混音：`volume=0.15~0.2` 压在配音下 + 结尾 `afade=t=out`；**CC BY 许可的曲子要在交付信息里附署名**（manifest 里有 artist/license）。**BGM 一旦确定，立即调 iskill-music-beats 做节拍分析（见下节），转场对准节拍点**。
 
 **③ 音效：** 默认跳过（Commons 音效质量杂、Pixabay 无音效 API）；用户给了 `sfx/` 目录才按段落插入。
 
 **混音管线（ffmpeg 实锤）：** 逐段视频渲染（`-an`）→ 逐段配音 `apad` 补齐段长 → 画面/配音两轨分别 concat → `amix` 混 BGM（bgm 用 `-stream_loop` 拉到全片长）→ 最终 `-c:v copy -c:a aac`。
+
+### BGM 节拍对齐（卡点转场，**有 BGM 时必做**）
+
+BGM 确定后第一步就是节拍分析——**转场尽量打在节拍点上**，观众感知为"画面跟着音乐走"，成片质感立刻上一档。
+
+**① 分析（调 iskill-music-beats）：**
+
+```bash
+PY=/Users/lv/.workbuddy/binaries/python/envs/default/bin/python
+# BGM 循环铺底时只分析前 60s 即可，速度快
+$PY ~/.workbuddy/skills/iskill-music-beats/scripts/beat_detect.py <bgm文件> --end 60 --json <bgm>.beats.json
+```
+
+产出 `beats.json`：`bpm` / `beat_interval`（平均节拍间隔）/ `beats`（节拍时间轴+强度）/ `strong_beats`（强节拍）/ `cut_candidates`（等距采样的最佳转场点池）。`note` 非空时是警告（无明确节拍的氛围曲），要转告用户并改用 fade 平缓转场、不强求卡点。
+
+**② 分镜表卡节拍（Phase 3 选片时约束段长）：**
+
+- 每段时长 = `beat_interval` 的整数倍（1x/2x/4x 按叙事节奏选），段边界对齐最近的强节拍
+- 钩子段（0-3s）对齐开头第一个强拍后的落点；收尾段对齐渐弱前的强拍
+- **配音约束优先于节拍**：段落时长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)` 不变，但把结果**向上取整到 `beat_interval` 的整数倍**，两边都满足
+
+**③ xfade offset 对准节拍（Phase 4 渲染）：**
+
+xfade 的转场**中心**落在 `offset + T/2`，要转场打在节拍 `t_b` 上：
+
+```
+offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
+```
+
+操作顺序：先用节拍定好各段边界 `t_0=0, t_1, t_2…`，再按上式算每段 xfade offset（`offset_k = t_{k-1} - T/2` 对应"第 k 段起点处的转场打在 t_{k-1} 节拍上"）。段长为 `beat_interval` 整数倍时，各转场天然全落在节拍网格上。
+
+**④ 验收加一项（Phase 5）：** 抽帧检查每个转场中点帧，对照 beats.json 确认转场时刻与节拍偏差 ≤ 0.1s。验证音轨可用 `--click` 生成的节拍 blip 与成片并播对比。
+
+**⑤ 剪映草稿模式（Phase 7）同步对齐：** 段落 `start_time` 直接用节拍边界值（beats.json 的 t 就是草稿时间轴）；`add_transition_simple` 加在段边界处即天然卡点。
 
 ### 输出契约
 
@@ -131,6 +165,7 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - 字幕文案「温馨纪实体」：短句、口语、有画面感（如「打出糯米的韧劲」），不用感叹号堆砌
 - 照片横竖混排：竖图 fill 满屏裁切；横图人像群像用 blur 垫底（fit + boxblur 背景）
 - Ken Burns 推拉交替 in/out 避免单调
+- **有 BGM 时段长受节拍约束**：每段取 `beat_interval` 整数倍、边界对强节拍（详见「BGM 节拍对齐」节）
 
 ## Phase 4 构建
 
@@ -149,7 +184,7 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
   3. **强调句分层**：钩子/金句用金色 `0xFFC93C` + 62 号，普通句白色 54 号；每句 `alpha='if(lt(t,a+0.25),(t-a)/0.25,1)'` 淡入
 - **照片素材必须动（Ken Burns，工作流管线版）**：`-loop 1 -t dur` 输入 → `scale=2160:3840...crop=2160:3840`（2x 超采样防抖）→ `zoompan=z='min(1+0.10*on/F,1.10)'`（推近）或 `z='max(1.10-0.10*on/F,1.0)'`（拉远），`x/y` 居中，`d=1:s=1080x1920:fps=25`，F=25*段长；相邻段交替 in/out
 - **视频段慢平移微动效**：1.15x 放大（`scale=1242:2208`）+ 动画 crop `crop=1080:1920:x='(iw-ow)*min(t/DUR,1)':y='(ih-oh)/2'`（crop 支持 t 表达式，左右轮换；比 zoompan 稳，无抖动）
-- **场景转场（concat 硬切的原罪解法）**：xfade 链——`[v0][v1]xfade=transition=fade:duration=0.4:offset=D0-0.4[vx1]`，`offset_k = Σ前k段时长 - k×转场时长`，链到最后一层；**音频必须同步 acrossfade 同参数**，否则画面字幕与配音漂移。转场类型对调性选：fade/dissolve 平缓、smoothleft/right 干净、zoomin 收尾有力
+- **场景转场（concat 硬切的原罪解法）**：xfade 链——`[v0][v1]xfade=transition=fade:duration=0.4:offset=D0-0.4[vx1]`，`offset_k = Σ前k段时长 - k×转场时长`，链到最后一层；**有 BGM 时 offset 换用节拍公式 `offset = t_b - T/2` 让转场打在节拍上**（详见「BGM 节拍对齐」节）；**音频必须同步 acrossfade 同参数**，否则画面字幕与配音漂移。转场类型对调性选：fade/dissolve 平缓、smoothleft/right 干净、zoomin 收尾有力
 - **⚠️ 转场与配音的协调铁律**：转场吃掉每段首尾各 T/2 的重叠区——每段音轨必须 `adelay=500`（头垫）+ `apad`（尾垫），保证**人声不进转场区**（头垫 ≥ 转场时长 + 0.1s）；段长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)`
 - **字幕样式**：白字 + `box=1:boxcolor=black@0.34:boxborderw=18` 半透明底条（快速档；有设计感用上面三层方案）
 - **逐镜头编码再 concat**：concat demuxer 要求参数完全一致（同分辨率/帧率/编码），先统一 `fps=25, format=yuv420p` 再拼
