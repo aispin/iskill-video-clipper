@@ -78,6 +78,21 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 
 ## Phase 0 环境自检（一次性）
 
+**ffmpeg 探测决策树（先探测 brew 安装的 ffmpeg，能力够就直接用，别上来就装 imageio）：**
+
+```bash
+# ① 定位候选：PATH（含 brew link 的）→ Apple Silicon brew → Intel brew
+FFMPEG=$(command -v ffmpeg 2>/dev/null || true)
+[ -z "$FFMPEG" ] && [ -x /opt/homebrew/bin/ffmpeg ] && FFMPEG=/opt/homebrew/bin/ffmpeg
+[ -z "$FFMPEG" ] && [ -x /usr/local/bin/ffmpeg ]   && FFMPEG=/usr/local/bin/ffmpeg
+
+# ② 能力探测（关键一步）：产线要用的滤镜逐个验，齐了才算过关
+$FFMPEG -hide_banner -filters 2>/dev/null | grep -E ' (drawtext|zoompan|xfade) '
+```
+
+- **brew ffmpeg 过关即用**：brew 公式（无论 Intel/Apple Silicon）自带 ffprobe，时长/流探测直接用，不必 grep Duration
+- **候选缺失或缺 drawtext** → 装 imageio-ffmpeg 静态构建兜底：
+
 ```bash
 PY=/Users/lv/.workbuddy/binaries/python/versions/3.13.12/bin/python3
 $PY -m venv /Users/lv/.workbuddy/binaries/python/envs/default   # 已存在则跳过
@@ -85,7 +100,7 @@ $PY -m venv /Users/lv/.workbuddy/binaries/python/envs/default   # 已存在则�
 FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())")
 ```
 
-- 无 Homebrew 时的 ffmpeg 获取方式；无 ffprobe，时长用 `ffmpeg -i 2>&1 | grep -oE "Duration: [0-9:.]+"` 解析
+- imageio 构建无 ffprobe：时长用 `ffmpeg -i 2>&1 | grep -oE "Duration: [0-9:.]+"` 解析（剪映草稿阶段另有 static_ffmpeg 补 ffprobe，见 Phase 7）
 - 本构建含 libx264/aac，**不含 heic 解码**（iPhone heic 照片需先转或剔除）
 - 中文字体：`/System/Library/Fonts/STHeiti Medium.ttc`（路径含空格，滤镜里用 `fontfile='...'` 单引号包裹）
 
@@ -125,8 +140,8 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - **Ken Burns 防抖**：先 `scale=2160:3840`（2x 超采样）再 `zoompan=...s=1080x1920`，直接在小图上 zoompan 会抖
 - **zoompan 表达式**：in: `min(1+0.14*on/{frames},1.14)`；out: `max(1.14-0.14*on/{frames},1.0)`；居中 `x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'`
 - **中文 drawtext**：文本写入临时文件用 `textfile=`（彻底避开转义地狱），定时用 `enable='between(t,a,b)'`
-- **⚠️ drawtext 引擎实锤（2026-09-30）**：本机 `/opt/homebrew/bin/ffmpeg` 无 drawtext（构建缺 freetype，有 drawgrid）！渲染字幕必须用 imageio-ffmpeg 静态构建：
-  `/Users/lv/.workbuddy/binaries/python/envs/default/lib/python3.13/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`（drawtext/libx264 齐全）。用前先 `-filters | grep drawtext` 验一下。
+- **⚠️ drawtext 引擎（2026-09-30 实锤）**：Homebrew 公式默认**不带 freetype**——本机 `/opt/homebrew/bin/ffmpeg` 无 drawtext（有 drawgrid），**别假设 brew ffmpeg 能渲染字幕**。按 Phase 0 决策树先探测：brew ffmpeg 若带 drawtext（部分第三方 tap 构建）直接用、白得 ffprobe；没有才切 imageio-ffmpeg 静态构建：
+  `/Users/lv/.workbuddy/binaries/python/envs/default/lib/python3.13/site-packages/imageio_ffmpeg/binaries/ffmpeg-macos-aarch64-v7.1`（drawtext/libx264 齐全）。不管用哪个引擎，产线开跑前都再 `-filters | grep drawtext` 验一遍。
 - **超长句换行**：drawtext 不自动折行，>16 字的句子在 textfile 里手动 `\n` 断行（一行 ≤16 字，fontsize 52 @ 1080 宽）
 - **字幕要有设计感（2026-09-30 实锤，三层）**：
   1. **底部渐变压条**：`geq=r=0:g=0:b=0:a=153*Y/359` 生成 1080x360 透明→黑渐变 png，成片级 `overlay=0:main_h-overlay_h` 全程压底（综艺感，字幕不再浮在画面上）
@@ -183,7 +198,7 @@ proj.save()
 
 ### 实锤要点
 - 草稿根目录自动探测（macOS 路径吻合）；素材自动复制进草稿 materials/ **自包含**，无沙盒媒体丢失问题
-- 视频素材探测链：pymediainfo → ffprobe fallback；**没有 ffprobe 时纯照片草稿能成、含视频草稿直接失败**（Errno 2 'ffprobe'），所以先注入 static_ffmpeg 的 ffprobe
+- 视频素材探测链：pymediainfo → ffprobe fallback；**没有 ffprobe 时纯照片草稿能成、含视频草稿直接失败**（Errno 2 'ffprobe'），所以先注入 static_ffmpeg 的 ffprobe。brew 装了 ffmpeg 时优先用其自带 ffprobe（`/opt/homebrew/bin/ffprobe` 或 `/usr/local/bin/ffprobe`），static_ffmpeg 仅作兜底
 - 草稿生成后剪映**不会实时刷新**：需重启剪映，或随便进出一个旧草稿后再看
 - 校验：`python <skill>/scripts/draft_inspector.py summary --name "草稿名"`
 - 首次失败残留的空草稿会被技能 Auto-healing 自动清理，不碍事
