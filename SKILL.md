@@ -147,7 +147,7 @@ offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
 
 1. 转场点 **≤6 个/片**（每点渲染 +20~40s），优先【钩子】结束后第一转场、情绪高潮、CTA 前；其余转场点 xfade 或硬切
 2. 转场片段时长 = beat_interval 整数倍（无 BGM 1.2~2s）；shader 窗口内缩 0.15s（`time:0.15, duration:T-0.3`），首尾各留纯 A/纯 B 帧保证 concat 连续
-3. 模板库：`reference/templates/`（README 有使用流程）——`shader-transition-clip/`（转场片段，换 frameA/frameB/shader 名三处即可）、`hook-card/`（片头钩子+花字+CTA 三场景卡，10s）、`cover-card/`（首帧即封面卡，3s，`ffmpeg -ss 0` 抽封面）；渲染 `npm run render`（需代理）
+3. 模板库：`reference/templates/`（README 有使用流程）——`shader-transition-clip/`（转场片段，换 frameA/frameB/shader 名三处即可）、`hook-card/`（片头钩子+花字+CTA 三场景卡，10s）、`cover-card/`（三段式封面卡：冲击力标题+5张编号卖点卡弧形半包围+出镜主体羽化，3s，`ffmpeg -ss 0` 抽封面，**设计规范与验收清单见 `reference/cover-style-guide.md`**）；渲染 `npm run render`（需代理）
 4. 每个转场片段交付前抽首尾帧与 A/B 对比校验；不干净的 shader 换掉。**shader 行为注意**（e2e 实测）：shader 转场普遍有 bgColor 参与相位（domain-warp 尾段撕裂露黑、light-leak 头段曝光黑场、cinematic-zoom/cross-warp-morph 长黑场）——首用 shader 必须**全程逐帧抽查**（`select='not(mod(n\,2))'`）；黑场压不满 1-2 帧时缩窗口（0.8~1.2s）读作闪切，或换 shader
 5. 转场片段在 concat 前与相邻段归一编码（libx264/yuv420p/30fps/crf18），`-f concat -c copy` 硬拼
 

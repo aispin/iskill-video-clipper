@@ -4,7 +4,7 @@
 
 | 模板 | 用途 | 时长 | 关键约定 |
 |---|---|---|---|
-| `cover-card/` | **封面卡**：首帧即封面，`ffmpeg -ss 0` 抽第 0 帧作封面图 | 3s | 封面元素**禁用 from()/fromTo()**，动效 0.8s 后用 `to()` 接管 |
+| `cover-card/` | **封面卡**：三段式（冲击力标题 + 5张编号卖点卡弧形半包围 + 出镜主体羽化），首帧即封面，`ffmpeg -ss 0` 抽第 0 帧作封面图 | 3s | 封面元素**禁用 from()/fromTo()**，动效 0.8s 后用 `to()` 接管；设计规范与验收清单见 `reference/cover-style-guide.md` |
 | `hook-card/` | **片头卡**：钩子→卖点花字→CTA 三场景，逐词弹出/滑入/脉冲 | 10s | scene 切换走 data-start 边界硬切；要 shader 转场参照 gpu-transitions.md §2 加 HyperShader.init |
 | `shader-transition-clip/` | **段间转场片段**：A尾帧→shader→B首帧，渲染独立 mp4 后 concat 回主链 | 1.2~2s（=整数拍） | 窗口内缩 0.15s；concat 前归一编码 |
 
@@ -17,11 +17,10 @@
 
 ## 字体说明（重要）
 
-- 模板通过相对路径 `../../../fonts/` 引用本 skill 的字体库（优设标题黑/站酷庆科黄油体等，免费可商用）
-- **拷走模板必须同步处理字体**：要么把用到的 .ttf 复制进模板 `assets/` 并把 @font-face 的 src 改成 `assets/xxx.ttf`，要么保持相对层级
-- **Hiragino Sans GB（系统字体）不入仓库**（版权原因）。如需常规正文黑体，自行从 `/System/Library/Fonts/Hiragino Sans GB.ttc` 复制并在 @font-face 用 `format("collection")` 声明
-- lint 强制 @font-face：页面里用到的每个字体族必须有声明，否则 check/render 报错
-- 优设标题黑、庆科黄油体均为单一 Regular 字重，**勿依赖 font-weight 700/900 变粗**（会触发 Chrome 伪粗发糊）
+- **两个卡片模板的字体已本地化进各自 `assets/`**（优设标题黑/庞门正道，免费商用），模板自包含，拷走即用，check 的 StaticGuard 也要求路径不越级（禁 `../`）
+- **Hiragino Sans GB（系统字体）不入仓库**（版权原因）。cover-card 的字体栈里以 `local()` 声明兜底；如需还原 v14 定稿卡文案字形，从 `/System/Library/Fonts/Hiragino Sans GB.ttc` 复制进模板 `assets/` 并改 @font-face 为 `format("collection")`
+- 单一 Regular 字重的字体（优设标题黑/庞门正道/庆科黄油体）**勿依赖 font-weight 700/900 变粗**（会触发 Chrome 伪粗发糊）
+- lint 强制 @font-face：页面里用到的每个字体族必须有声明（系统字体用 `src: local(...)` 即可满足），否则 check/render 报错
 
 ## 通用坑（全模板适用）
 
