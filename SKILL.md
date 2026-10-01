@@ -24,6 +24,7 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 成片完成后默认产出封面：`viral-video-team-output/成片/YYYY-MM-DD-<选题短名>-封面.png`。
 
 - **默认截帧（免费）**：用 ffmpeg 从成片挑高光帧（优先【钩子】段对应的画面时刻，`-q:v 1` 高质量导出）；可叠标题字（drawtext 用 imageio 构建，样式与字幕强调层一致）
+  - **⚠️ 底图必须无字幕（2026-10-01 实锤）**：字幕在分镜段生成时已烧入，**从成片或 seg 抽帧都会带成片字幕**，与封面叠字重叠穿帮。正确做法：直接用分镜**原图**（stock photo/视频帧）做封面底，crop 成 1080x1920 后再 drawtext
 - **AI 封面（仅用户明确要求）**：走 iskill-dig-media ai-image 协议——竖屏 1024x1536，prompt = 选题视觉描述 + 与成片一致的 style 后缀，落 `dig-media/ai-封面-<选题短名>/`，credits 事前确认，成品复制到成片目录
 - 交付时注明封面来源（截帧/AI），AI 时附 credits 估算
 
@@ -93,12 +94,13 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 **① 配音（台词声）级联：**
 
 1. **用户自录音频**（真实感最好）→ 复用 iskill-media-transcribe 的 transcribe 阶段转成 srt，用 srt 时间轴驱动 drawtext，字幕与语音天然对齐；装了 whisper CLI（mlx-whisper）才有逐句时间戳，只有 VoiceBox 转写时是整段单块时间轴，此时按口播稿段落近似切分
-2. **VoiceBox**（本地 TTS，`http://127.0.0.1:17493`，`VOICEBOX_URL` 可改）：
-   - 探测 `GET /profiles`；**中文稿必须 `language:"zh"`**（male/child 档案走 qwen 引擎可出中文；female preset 档案只支持 kokoro 引擎=英文音色，中文会 400「only supports engine 'kokoro', not 'qwen'」）
-   - 合成链：`POST /generate {profile_id, text, language}` → 轮询 `GET /history/{id}` 至 completed → `GET /audio/{id}` 存 WAV。qwen 引擎约 10-25s/句，**逐句合成 + 后台执行（run_in_background），并发 ≤2**
+2. **edge-tts**（managed venv 已装 7.2.8，微软在线中文音色，**中文配音首选**——2026-10-01 实测）：`/Users/lv/.workbuddy/binaries/python/envs/default/bin/edge-tts --voice zh-CN-YunjianNeural --rate=+30% --text "<句>" --write-media out.mp3`，约 1s/句、语速由 rate 控制（+30% ≈ 5.5字/s 短视频口播感）；男声 Yunjian（沉稳叙事）/ Yunxi（阳光）/ Yunyang（播报），女声 Xiaoxiao。需联网
+3. **VoiceBox**（本地 TTS，`http://127.0.0.1:17493`，`VOICEBOX_URL` 可改）：
+   - 探测 `GET /profiles`；**⚠️ 2026-10-01 实锤两个坑**：①中文 preset 档案（qwen_custom_voice 引擎）任务会**永久卡在 queued**（连"你好"都不动，generation_count=0），不可用；②英文 cloned 档案（qwen 引擎）虽能读中文但**外国口音严重**，中文稿别用
+   - 可用路径：qwen 引擎 + `language:"zh"` 的档案；合成链 `POST /generate` → 轮询 `GET /history/{id}` → `GET /audio/{id}` 存 WAV，约 10-25s/句，逐句合成 + 后台执行
    - 段落时长 = max(字数估时, 配音时长 + 0.3s)，配音驱动分镜节奏
-3. **VoiceStudio**（`http://localhost:3900`，`VOICESTUDIO_URL` 可改）在线则优先于 VoiceBox（MP3、更快、真人级音色）
-4. 都不可用 → 无配音出片（BGM 仍在），交付时明确说「台词无声音」及原因
+4. **VoiceStudio**（`http://localhost:3900`，`VOICESTUDIO_URL` 可改）在线则优先于 VoiceBox（MP3、更快、真人级音色）
+5. 都不可用 → 无配音出片（BGM 仍在），交付时明确说「台词无声音」及原因
 
 **② BGM 级联：** 用户指定 → 工作区 `bgm/` 目录有现成的 → 调 iskill-dig-media `music --kw "<对题英文音乐词>"` 自动挖 1 首。混音：`volume=0.15~0.2` 压在配音下 + 结尾 `afade=t=out`；**CC BY 许可的曲子要在交付信息里附署名**（manifest 里有 artist/license）。**BGM 一旦确定，立即调 iskill-music-beats 做节拍分析（见下节），转场对准节拍点**。
 
