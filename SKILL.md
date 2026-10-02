@@ -106,7 +106,7 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 
 **③ 音效：** 默认跳过（Commons 音效质量杂、Pixabay 无音效 API）；用户给了 `sfx/` 目录才按段落插入。
 
-**混音管线（ffmpeg 实锤）：** 逐段视频渲染（`-an`）→ 逐段配音 `apad` 补齐段长 → 画面/配音两轨分别 concat → `amix` 混 BGM（bgm 用 `-stream_loop` 拉到全片长）→ 最终 `-c:v copy -c:a aac`。
+**混音管线（ffmpeg 实锤）：** 逐段视频渲染（`-an`）→ 逐段配音 `apad` 补齐段长 → 画面/配音两轨分别 concat → `amix` 混 BGM（bgm 用 `-stream_loop` 拉到全片长）→ 最终 `-c:v copy -c:a aac`。**混音配方与验收方法见下文「BGM 混音链（侧链闪避）」**——固定 `volume` 不如侧链闪避耐听。
 
 ### BGM 节拍对齐（卡点转场，**有 BGM 时必做**）
 
@@ -166,6 +166,67 @@ gl 档成本提示：GL 转场渲染显著慢于 xfade（xfade 近零成本）�
 - **若必须先试 xfade**：给每个输入加 `settb=AVTB,setpts=PTS-STARTPTS,fps=25` 再进链；仍不放心就直接走 concat。
 - **验收铁律（必加一项）**：`视频轨帧数 ≈ (Σd − (n−1)·T) × fps`，且**必须能抽到 `t = 总时长−2s` 的帧**。只看容器 Duration 或 `ls` 文件大小都会放过此 bug。
 - **通用教训**：ffmpeg 滤镜链的失败**可以是静默的**（rc=0、无 stderr、容器元数据还正常）。凡是「多段合成」的产物，验收必须落在**逐轨实测**（帧数/时长/尾帧可抽）上，不能凭退出码。
+
+#### ⚠️ 踩坑：`-map 0:v` 在滤镜链下取的是**原始输入流**（2026-10-02 实锤）
+
+- **症状**：`-filter_complex` 语法没问题、滤镜图也建得起来，但 `libx264` 报 `Error while opening encoder for output stream #0:1`（exit 187），参数看着都对。
+- **根因**：`-map 0:v` 映射的是**解码后的原始输入流**，不是滤镜链的输出。源图若是 mjpeg 1280×853（高为奇数）→ yuv420p 要求偶数尺寸 → 编码器直接拒绝。
+- **易误判**：第一反应会去查"是不是缩放算出奇数高"，补 `force_divisible_by=2` 也没用——因为那条滤镜链的输出**根本没被 map**。
+- **修法**：滤镜链**末尾打标签**，再用标签 map：
+
+```
+...format=yuv420p,setsar=1,fps=25[vout]     # 链尾打标签
+-map "[vout]" -map 1:a                       # 别写 -map 0:v
+```
+
+- **顺带**：`scale=...:force_divisible_by=2` 仍要保留——contain 缩放算出的奇数高同样会被 libx264 拒。
+
+#### 横屏源进竖屏：cover 裁切 vs blur-fill（构图选型）
+
+横屏素材（1280×853 / 1920×1080）铺进 9:16 竖屏只有两条路，**选错会直接毁掉「口播↔画面关联」**：
+
+| | cover 裁切 | **blur-fill（推荐）** |
+|---|---|---|
+| 做法 | `scale=W:H:force_original_aspect_ratio=increase,crop=W:H` | 同一张源分两路：bg 铺满+虚化压暗，fg `decrease` 完整居中 overlay |
+| 保留画面 | 只剩中间约 **27% 宽**（1280 横屏进 1080×1920） | **100%**，主体完整 |
+| 放大倍率 | 1.5～2.7 倍 → 发虚 | fg 多为**降采样** → 更锐 |
+| 何时用 | 源本身是竖屏、或主体恰好居中且够大 | **横屏源默认走这条** |
+
+实拍案例（「捡秋边界」）：cover 版把「松鼠在树干」裁到只剩一只眼睛、「双手采摘」裁在枝叶上——用户直接判为致命问题；改 blur-fill 后 8 个主体全部完整可见（验收靠中点帧接触表目检）。
+
+```
+[0:v]split=2[b][f];
+[b]scale=W:H:force_original_aspect_ratio=increase,crop=W:H,
+   gblur=sigma=28,eq=brightness=-0.10:saturation=0.85[bg];
+[f]scale=W:H:force_original_aspect_ratio=decrease:force_divisible_by=2[fg];
+[bg][fg]overlay=(W-w)/2:(H-h)/2,
+zoompan=z='min(1+0.04*on/N,1.04)':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=WxH:fps=FPS,
+drawtext=fontfile=...:textfile=...:x=(w-text_w)/2:y=h-360,
+format=yuv420p,setsar=1,fps=FPS[vout]
+```
+
+参数取法：`gblur sigma ≈ 短边/30`（1080 宽取 28～30）；bg 压暗 `brightness=-0.10` + `saturation=0.85` 让 fg 跳出；`zoompan` 微推 1.00→1.04 避免"死图"（`N = fps × d`）。图片段输入用 `-loop 1 -framerate FPS -t (d+0.5)`，输出端再 `-t d` 截断；视频段用 `-stream_loop -1 -i`。
+
+#### BGM 混音链（侧链闪避，比固定音量耐听）
+
+固定 `volume=0.15` 的问题：口播停顿处 BGM 明显偏小、有口播处又容易被压住。**拿口播当侧链键做闪避**——说话时自动让路，停顿处自然抬起来：
+
+```
+[1:a]atrim=0:{F},asetpts=N/SR/TB,volume=0.16,
+     afade=t=in:st=0:d=1.2,afade=t=out:st={F-2.5}:d=2.5[bg];
+[bg][0:a]sidechaincompress=threshold=0.02:ratio=8:attack=5:release=350[duck];
+[0:a][duck]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.95[aout]
+```
+
+- `amix` **必须 `normalize=0`**（否则两轨各降 6dB）；`alimiter` 收顶防削波
+- **验收用 `volumedetect` 逐点比对**，不能只靠耳朵：
+
+| 抽测点 | 有 BGM | 无 BGM（纯静音） |
+|---|---|---|
+| 段内留白（如 t=6.1–6.5s） | **−32 dB 上下** | −91 dB |
+| 全片 max | ≤ −4 dB（有余量、未削波） | — |
+
+  判据：留白处若读到 −91 dB 就是 **BGM 没铺上**（常见于 `atrim`/`-t` 长度算错，或 BGM 比成片短却没 `-stream_loop`）。
 
 ### 输出契约
 
