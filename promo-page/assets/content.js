@@ -102,27 +102,14 @@ window.PROMO = {
       steps: {
         eyebrow: "上手",
         title: "三步跑起来",
-        sub: "",
+        sub: "命令由 agent 跑，你只说要什么、看结果。",
         items: [
-          {
-            title: "交给 AI 装",
-            desc: "把提示词粘进对话框，agent 会自己拉代码、读文档，再告诉你怎么用。",
-            codeKey: "install"
-          },
-          {
-            title: "先跑一次环境自检",
-            desc: "逐项验产线要用的滤镜；brew ffmpeg 若没有 drawtext（Homebrew 公式默认不带 freetype），就切 imageio-ffmpeg 静态构建。",
-            codeName: "bash",
-            code: "ffmpeg -hide_banner -filters | grep -E ' (drawtext|zoompan|xfade) '"
-          },
-          {
-            title: "有 BGM 就分析节拍",
-            desc: "循环铺底时只分析前 60s 即可；产出 beats.json 后按节拍定段长、卡转场。",
-            codeName: "bash",
-            code: "python ~/.workbuddy/skills/iskill-music-beats/scripts/beat_detect.py bgm.m4a --end 60 --json bgm.m4a.beats.json"
-          }
+          { title: "交给 AI 装", desc: "把这句话粘进对话框，agent 会自己拉代码、读文档，再告诉你用法。", codeKey: "install" },
+          { title: "给素材目录和时长", desc: "缺素材它会去挖，有 BGM 它会先对节拍；引擎怎么选交给它判断。", codeName: "prompt", code: "把 ~/素材/农场 这批照片和视频剪一条 30 秒的成片，节奏轻快。" },
+          { title: "看成片", desc: "成片和剪映草稿都在输出目录，你看一遍节奏；不满意就说哪一段，它重剪那一段。" }
         ]
       },
+
 
       faq: {
         eyebrow: "问答",
@@ -233,27 +220,14 @@ window.PROMO = {
       steps: {
         eyebrow: "Get started",
         title: "Up and running in three steps",
-        sub: "",
+        sub: "The agent runs the commands. You say what you want and check the result.",
         items: [
-          {
-            title: "Let your agent install it",
-            desc: "Paste the line into the chat — it clones the repo, reads the docs, and tells you how to use it.",
-            codeKey: "install"
-          },
-          {
-            title: "Check the ffmpeg build",
-            desc: "Verify the filters the pipeline needs. Homebrew's build ships without freetype (no drawtext), in which case switch to the imageio-ffmpeg static build.",
-            codeName: "bash",
-            code: "ffmpeg -hide_banner -filters | grep -E ' (drawtext|zoompan|xfade) '"
-          },
-          {
-            title: "Detect the beat when there is BGM",
-            desc: "For a looping bed, analysing the first 60s is enough; then set segment lengths and transitions from beats.json.",
-            codeName: "bash",
-            code: "python ~/.workbuddy/skills/iskill-music-beats/scripts/beat_detect.py bgm.m4a --end 60 --json bgm.m4a.beats.json"
-          }
+          { title: "Let your agent install it", desc: "Paste the line into the chat — it clones the repo, reads the docs, and tells you how to use it.", codeKey: "install" },
+          { title: "Give the footage dir and length", desc: "Missing footage? It digs for more. Got a BGM? It beat-matches first. Engine choice is its call.", codeName: "prompt", code: "Cut a 30-second clip from the photos and videos in ~/footage/farm — upbeat pacing." },
+          { title: "Watch the cut", desc: "The video and a JianYing draft land in the output dir — watch it once. Don't like a segment? Name it and it re-cuts just that part." }
         ]
       },
+
 
       faq: {
         eyebrow: "FAQ",
