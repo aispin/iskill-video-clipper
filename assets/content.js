@@ -37,16 +37,19 @@ window.PROMO = {
         meta2: "BGM 卡节拍",
         meta3: "成片 / 剪映草稿"
       },
-      terminal: {
-        title: "zsh — iskill-video-clipper",
-        lines: [
-          [{ t: "$ ", c: "p" }, { t: "ffmpeg -hide_banner -filters | grep -E ' (drawtext|zoompan|xfade) '", c: "k" }],
-          [{ t: "    ", c: "" }, { t: "drawtext  V->V  Draw text on top of video frames.", c: "c" }],
-          [{ t: "    ", c: "" }, { t: "zoompan   V->V  Apply Zoom & Pan effect.", c: "c" }],
-          [{ t: "$ ", c: "p" }, { t: "python .../beat_detect.py bgm.m4a --end 60 --json bgm.m4a.beats.json", c: "k" }],
-          [{ t: "✓ ", c: "p" }, { t: "bpm 96 · 强拍 18 个 · 候选转场点 12 个", c: "s" }]
+      chat: {
+        title: "AI Agent · 对话现场",
+        status: "在线",
+        userLabel: "你",
+        agentLabel: "AI",
+        messages: [
+          { role: "user", text: "把 ~/素材/农场 这批照片和视频剪一条 30 秒" },
+          { role: "agent", text: "先跑环境自检，再挑镜、按时长配节奏；有 BGM 就先分析节拍，把转场和切点都对准拍子。", tag: "已选 18 镜" },
+          { role: "user", text: "素材不够怎么办？" },
+          { role: "agent", text: "缺镜可以调 iskill-dig-media 去挖图库素材，或让 AI 生成补镜——混合模式自动补齐。" }
         ]
       },
+
 
       stats: [
         { value: "3 档", label: "素材引擎", note: "local 全免费 / aigc-mix 缺镜 AI 补 / aigc-full 纯 AI 生成" },
@@ -155,16 +158,19 @@ window.PROMO = {
         meta2: "Cuts on the beat",
         meta3: "Cut or JianYing draft"
       },
-      terminal: {
-        title: "zsh — iskill-video-clipper",
-        lines: [
-          [{ t: "$ ", c: "p" }, { t: "ffmpeg -hide_banner -filters | grep -E ' (drawtext|zoompan|xfade) '", c: "k" }],
-          [{ t: "    ", c: "" }, { t: "drawtext  V->V  Draw text on top of video frames.", c: "c" }],
-          [{ t: "    ", c: "" }, { t: "zoompan   V->V  Apply Zoom & Pan effect.", c: "c" }],
-          [{ t: "$ ", c: "p" }, { t: "python .../beat_detect.py bgm.m4a --end 60 --json bgm.m4a.beats.json", c: "k" }],
-          [{ t: "✓ ", c: "p" }, { t: "bpm 96 · 18 strong beats · 12 cut candidates", c: "s" }]
+      chat: {
+        title: "AI Agent · live session",
+        status: "online",
+        userLabel: "You",
+        agentLabel: "AI",
+        messages: [
+          { role: "user", text: "Cut a 30-second clip from the photos and videos in ~/footage/farm" },
+          { role: "agent", text: "Environment self-check first, then shot selection and pacing. Got a BGM? I analyze the beats first and align every transition and cut to them.", tag: "18 shots selected" },
+          { role: "user", text: "What if I don't have enough footage?" },
+          { role: "agent", text: "I can pull stock clips via iskill-dig-media or generate the missing shots — the mixed mode fills the gaps automatically." }
         ]
       },
+
 
       stats: [
         { value: "3 engines", label: "where the footage comes from", note: "local (free) / aigc-mix (fill gaps with AI) / aigc-full (all AI)" },
