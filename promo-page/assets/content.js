@@ -122,7 +122,7 @@ window.PROMO = {
           { q: "一定要装 ffmpeg 吗？", a: "是的，全流程走本地 ffmpeg。先按决策树探测：<code>command -v ffmpeg</code> → <code>/opt/homebrew/bin/ffmpeg</code> → <code>/usr/local/bin/ffmpeg</code>，再逐个验 <code>drawtext / zoompan / xfade</code> 滤镜。注意本机 Homebrew 公式默认<b>不带 freetype</b>（无 <code>drawtext</code>），缺就装 <code>imageio-ffmpeg</code> 静态构建兜底（含 libx264/aac，但不含 heic 解码）。" },
           { q: "要花钱吗？", a: "<code>--engine local</code>（默认）全免费，纯本地 ffmpeg。<code>aigc-mix</code> / <code>aigc-full</code> 会调用 AI 生成镜头，<b>计费且事前报 credits 估算、需你确认</b>；真实感选题会把 AI 镜头限定在空镜 / 氛围 / 转场镜。" },
           { q: "含视频素材的剪映草稿为什么失败？", a: "草稿的媒体解析链是 <code>pymediainfo → ffprobe</code>，缺 ffprobe 时<b>纯照片草稿能成、含视频的草稿直接失败</b>（Errno 2 'ffprobe'）。所以要先注入 <code>static_ffmpeg</code> 的 ffprobe；brew 装了 ffmpeg 就直接用它自带的 ffprobe。" },
-          { q: "字幕文案能自己写吗？", a: "工作流模式下不能。字幕唯一来源是定稿口播稿 v2，按 <code>【钩子】</code> 等段落注释分段、逐句上字幕，<b>禁止自行创作或改写</b>；发现文案问题要退回 iskill-copy-deslop，不代改。" },
+          { q: "字幕文案能自己写吗？", a: "工作流模式下不能。字幕唯一来源是定稿口播稿 v2，按 <code>【钩子】</code> 等段落注释分段、逐句上字幕，<b>禁止自行创作或改写</b>；多平台四套模式下取<b>用户指定的那一套</b>（默认「通用」），一条成片只用一套、不混用。发现文案问题要退回 iskill-copy-deslop，不代改。" },
           { q: "能不能不用 AI，手动装？", a: "可以。把仓库 clone 进你的 agent 技能目录（如 <code>~/.workbuddy/skills/</code>）就行 —— 技能本身是纯文本加脚本。" }
         ]
       },
@@ -243,7 +243,7 @@ window.PROMO = {
           { q: "Is ffmpeg required?", a: "Yes — the whole pipeline runs on local ffmpeg. It probes in order (<code>command -v ffmpeg</code> → <code>/opt/homebrew/bin/ffmpeg</code> → <code>/usr/local/bin/ffmpeg</code>) then verifies the <code>drawtext / zoompan / xfade</code> filters. Note Homebrew's formula ships <b>without freetype</b> (no <code>drawtext</code>); if that is missing, install the <code>imageio-ffmpeg</code> static build (it has libx264/aac but no heic decoding)." },
           { q: "Does it cost money?", a: "<code>--engine local</code> (the default) is entirely free and local. <code>aigc-mix</code> / <code>aigc-full</code> generate shots with AI — <b>billable, with a credits estimate shown and your confirmation required up front</b>. For realistic topics, AI shots are limited to cutaways, atmosphere and transitions." },
           { q: "Why does a JianYing draft with video fail?", a: "Media resolution goes <code>pymediainfo → ffprobe</code>, and without ffprobe <b>a photos-only draft works while one containing video fails outright</b> (Errno 2 'ffprobe'). Inject static_ffmpeg's ffprobe first; if brew's ffmpeg is installed, its bundled ffprobe is preferred." },
-          { q: "Can I write the subtitles myself?", a: "Not in workflow mode. Subtitles come solely from the approved v2 script, split on section markers like <code>【钩子】</code> and applied line by line — <b>rewriting or inventing them is forbidden</b>. If the copy is wrong, send it back to iskill-copy-deslop instead of patching it here." },
+          { q: "Can I write the subtitles myself?", a: "Not in workflow mode. Subtitles come solely from the approved v2 script, split on section markers like <code>【钩子】</code> and applied line by line — <b>rewriting or inventing them is forbidden</b>. In the four-platform mode it takes the <b>set the user designated</b> (default \"generic\"); one finished cut uses one set only. If the copy is wrong, send it back to iskill-copy-deslop instead of patching it here." },
           { q: "Can I install it without an agent?", a: "Sure. Clone the repo into your agent's skills directory (e.g. <code>~/.workbuddy/skills/</code>) — plain text and scripts." }
         ]
       },
