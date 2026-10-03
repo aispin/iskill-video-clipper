@@ -108,9 +108,11 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 
 **混音管线（ffmpeg 实锤）：** 逐段视频渲染（`-an`）→ 逐段配音 `apad` 补齐段长 → 画面/配音两轨分别 concat → `amix` 混 BGM（bgm 用 `-stream_loop` 拉到全片长）→ 最终 `-c:v copy -c:a aac`。**混音配方与验收方法见下文「BGM 混音链（侧链闪避）」**——固定 `volume` 不如侧链闪避耐听。
 
-### BGM 节拍对齐（卡点转场，**有 BGM 时必做**）
+### BGM 节拍对齐（卡点转场，**有 BGM 时必做 —— 硬门禁**）
 
-BGM 确定后第一步就是节拍分析——**转场尽量打在节拍点上**，观众感知为"画面跟着音乐走"，成片质感立刻上一档。
+> **⚠️ 硬门禁（2026-10-03 起）**：只要成片带 BGM，**段长就必须按 `beat_interval` 向上取整、转场落在节拍网格上**（算法见下 ②），并在 Phase 5 抽帧核对卡点偏差 ≤0.1s。**「没做卡点」= 本节未完成**，交付信息必须写明（默认不接受跳过）。实测：未卡点的成片切点与音乐各走各的，观感明显更「业余」。
+
+BGM 确定后第一步就是节拍分析——**转场必须打在节拍点上**（默认档，非"尽量"），观众感知为"画面跟着音乐走"，成片质感立刻上一档。
 
 **① 分析（调 iskill-music-beats）：**
 
@@ -126,7 +128,7 @@ $PY ~/.workbuddy/skills/iskill-music-beats/scripts/beat_detect.py <bgm文件> --
 
 - 每段时长 = `beat_interval` 的整数倍（1x/2x/4x 按叙事节奏选），段边界对齐最近的强节拍
 - 钩子段（0-3s）对齐开头第一个强拍后的落点；收尾段对齐渐弱前的强拍
-- **配音约束优先于节拍**：段落时长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)` 不变，但把结果**向上取整到 `beat_interval` 的整数倍**，两边都满足
+- **配音约束优先于节拍（但节拍必须满足）**：段落时长公式 `dur = 0.8 + max(字数估时, 配音时长+0.8)` 不变，再把结果**向上取整到 `beat_interval` 的整数倍**——**这是默认时长算法，不取整即未完成卡点**。例：BGM 99.4bpm（beat=0.6s），raw 6.58s → d=6.60s（11 拍）
 
 **③ 转场卡点（Phase 4 渲染）：**
 
@@ -145,9 +147,11 @@ offset_k = t_b - T/2        （T=转场时长，clamp ≥0）
 
 ### 转场档位（Phase 4，--transitions）
 
-**gl（默认）**：GPU shader 转场——段间转场渲染为独立「转场片段」（HyperFrames + @hyperframes/shader-transitions，WebGL 逐帧截帧）后 concat 回主链；卡片内（钩子/花字/CTA）多 scene 切换同样走 shader。**完整契约、架构图（整合地图 + 段间转场片段管线）、模板与已踩坑见 `reference/gpu-transitions.md`**，要点：
+**gl（默认，必须实做，非「可选增强」）**：GPU shader 转场——段间转场渲染为独立「转场片段」（HyperFrames + @hyperframes/shader-transitions，WebGL 逐帧截帧）后 concat 回主链；卡片内（钩子/花字/CTA）多 scene 切换同样走 shader。**完整契约、架构图（整合地图 + 段间转场片段管线）、模板与已踩坑见 `reference/gpu-transitions.md`**，要点：
 
-1. 转场点 **≤6 个/片**（每点渲染 +20~40s），优先【钩子】结束后第一转场、情绪高潮、CTA 前；其余转场点 xfade 或硬切
+> **⚠️ 默认档铁律（2026-10-03 起，用户判「PPT 味」为根治项）**：关键转场点**默认必须出 gl**，不是「可选」。**至少 3 个点必须先渲染 gl 片段**——①【钩子】段结束后的第一个转场 ②情绪高潮段边界 ③CTA 前最后一个转场。渲染失败重试 1 次仍失败才**单点**降 xfade（交付注明），**不得整片打回**。**全程硬切 = 未按默认档执行**，交付信息里必须写明原因（如沙箱无 Chrome/WebGL）。**「保守起见全硬切」不再被接受**——它正是「照片电子相册 / PPT 味」的来源（2026-10-03 实测：同素材加 gl 转场后观感明显上一档）。
+
+1. 转场点 **≤8 个/片**；渲染成本**本机实测 ≈6-8s/点**（2s 片段 6.0–8.2s，Apple GPU + HeadlessChrome，2026-10-03 实测）——**文档旧值「20~40s」为保守估计，别为省这点成本砍转场**。优先级：【钩子】结束后第一转场 > 情绪高潮段边界 > CTA 前最后转场 > 其余；非关键点可 xfade 或硬切
 2. 转场片段时长 = beat_interval 整数倍（无 BGM 1.2~2s）；shader 窗口内缩 0.15s（`time:0.15, duration:T-0.3`），首尾各留纯 A/纯 B 帧保证 concat 连续
 3. 模板库：`reference/templates/`（README 有使用流程）——`shader-transition-clip/`（转场片段，换 frameA/frameB/shader 名三处即可）、`hook-card/`（片头钩子+花字+CTA 三场景卡，10s）、`cover-card/`（三段式封面卡：冲击力标题+5张编号卖点卡弧形半包围+出镜主体羽化，3s，`ffmpeg -ss 0` 抽封面，**设计规范与验收清单见 `reference/cover-style-guide.md`**）；渲染 `npm run render`（需代理）
 4. 每个转场片段交付前抽首尾帧与 A/B 对比校验；不干净的 shader 换掉。**shader 行为注意**（e2e 实测）：shader 转场普遍有 bgColor 参与相位（domain-warp 尾段撕裂露黑、light-leak 头段曝光黑场、cinematic-zoom/cross-warp-morph 长黑场）——首用 shader 必须**全程逐帧抽查**（`select='not(mod(n\,2))'`）；黑场压不满 1-2 帧时缩窗口（0.8~1.2s）读作闪切，或换 shader
@@ -331,7 +335,7 @@ FFMPEG=$(/Users/lv/.workbuddy/binaries/python/envs/default/bin/python -c "import
 - 标题/落款/LOGO 位置
 - 镜头顺序与分镜表一致（**照片文件名↔内容映射极易记错，验收抓错位**——本项目实锤：221810 被错记为贴花，实为打糍粑）
 - Ken Burns 是否在动、压模/特写段是否对准时间点
-- **有 BGM 时**：转场中点帧对照 beats.json，卡点偏差 ≤ 0.1s
+- **有 BGM 时（必查，"没做卡点不得交付"）**：抽每个转场中点帧对照 beats.json，卡点偏差 **≤ 0.1s**
 - **AIGC 镜头（aigc-mix/full）**：抽帧看风格一致性（色调/光影是否与整片协调，锚帧镜头是否漂移成另一风格）；不协调的镜头换 prompt 重生成（重计费，需用户确认）或 dig-media 图库替换
 
 ### 文案↔画面关联性自检（**必做，不可跳过**）

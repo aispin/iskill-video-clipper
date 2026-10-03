@@ -88,8 +88,8 @@ window.PROMO = {
         items: [
           { icon: "camera", title: "先侦察，再剪辑", desc: "Phase 1 对每条视频抽 20%/50%/80% 三帧、照片拼 5×5 看板，先产出「素材 → 主题」映射表，绝不在没看过素材前动手。" },
           { icon: "layers", title: "三档素材引擎", desc: "<code>--engine local</code>（默认，全免费）/ <code>aigc-mix</code>（缺镜 AI 补，计费事前确认）/ <code>aigc-full</code>（无实拍全量 AI 生成）；素材从 raw/ → dig-media/ → AI 多级回退。" },
-          { icon: "gauge", title: "BGM 卡点转场", desc: "有 BGM 时自动调 iskill-music-beats 出 <code>beats.json</code>：段长取整到节拍、边界对强拍，验收要求转场偏差 ≤ 0.1s。" },
-          { icon: "bolt", title: "GPU shader 转场", desc: "默认 <code>gl</code> 档走 HyperFrames + WebGL 逐帧渲染独立转场片段；无 Chrome/WebGL 或要快速出片时按点降级到 <code>xfade</code>，单点降级不打回整片。" },
+          { icon: "gauge", title: "BGM 卡点转场（硬门禁）", desc: "有 BGM 时自动调 iskill-music-beats 出 <code>beats.json</code>：段长取整到节拍、转场中心落拍，验收要求偏差 ≤ 0.1s——<b>没做卡点不得交付</b>。" },
+          { icon: "bolt", title: "GPU shader 转场（默认档）", desc: "默认 <code>gl</code> 档走 HyperFrames + WebGL 逐帧渲染独立转场片段，钩子后 / 情绪高潮 / CTA 前<b>三个关键点必须实做</b>；仅在无 Chrome/WebGL 或单点失败时降级 <code>xfade</code>，<b>全程硬切须在交付中注明原因</b>，单点降级不打回整片。" },
           { icon: "crop", title: "封面 + 内置字体", desc: "默认从分镜原图截帧（避开成片字幕）出 1080×1920 封面、可叠标题字；内置 4 款免费可商用字体，按气质选型。" },
           { icon: "monitor", title: "成片或剪映草稿", desc: "ffmpeg 直出快速档，或生成剪映专业版草稿（真转场 / 文本动画 / 曲库 / 关键帧）供人工精修；两条引擎共用同一份分镜表。" }
         ]
@@ -209,8 +209,8 @@ window.PROMO = {
         items: [
           { icon: "camera", title: "Scout before you cut", desc: "Phase 1 samples three frames (20/50/80%) per clip and tiles photos into a 5×5 sheet, producing a footage→theme map so nothing is edited blind." },
           { icon: "layers", title: "Three source engines", desc: "<code>--engine local</code> (default, free) / <code>aigc-mix</code> (AI fills the gaps, cost confirmed up front) / <code>aigc-full</code> (all AI, no footage). Sources fall back raw/ → dig-media/ → AI." },
-          { icon: "gauge", title: "Cuts that land on the beat", desc: "With BGM it calls iskill-music-beats for a <code>beats.json</code>: segment lengths round to the beat, boundaries snap to strong beats, and acceptance requires ≤ 0.1s deviation." },
-          { icon: "bolt", title: "GPU shader transitions", desc: "The default <code>gl</code> tier renders standalone transition clips with HyperFrames + WebGL; fall back per-point to <code>xfade</code> when there is no Chrome/WebGL or when a fast cut is wanted — a single fallback never aborts the whole film." },
+          { icon: "gauge", title: "Cuts that land on the beat (hard gate)", desc: "With BGM it calls iskill-music-beats for a <code>beats.json</code>: segment lengths round to the beat, transition centres snap to beats, acceptance requires ≤ 0.1s deviation — <b>no beat sync, no delivery</b>." },
+          { icon: "bolt", title: "GPU shader transitions (default tier)", desc: "The default <code>gl</code> tier renders standalone transition clips with HyperFrames + WebGL; the <b>three key points</b> (post-hook, emotional peak, pre-CTA) must be real. Per-point <code>xfade</code> fallback only when Chrome/WebGL is missing or a point fails — <b>an all-hard-cut delivery must state why</b>." },
           { icon: "crop", title: "Covers and bundled fonts", desc: "Covers default to a 1080×1920 frame cropped from source stills (avoiding baked-in subtitles) with optional title text; four free commercial fonts ship in-repo." },
           { icon: "monitor", title: "Finished cut or JianYing draft", desc: "ffmpeg delivers a fast, fully automated cut, or it writes a JianYing Pro draft (real transitions, text animation, its music library, keyframes) for manual polish — both share one storyboard." }
         ]
