@@ -108,7 +108,7 @@ window.PROMO = {
         sub: "命令由 agent 跑，你只说要什么、看结果。",
         items: [
           { title: "交给 AI 装", desc: "把这句话粘进对话框，agent 会自己拉代码、读文档，再告诉你用法。", codeKey: "install" },
-          { title: "给素材目录和时长", desc: "缺素材它会去挖，有 BGM 它会先对节拍；引擎怎么选交给它判断。", codeName: "prompt", code: "把 ~/素材/农场 这批照片和视频剪一条 30 秒的成片，节奏轻快。" },
+          { title: "给素材目录和时长", desc: "缺素材它会去挖，有 BGM 它会先对节拍；画幅（9:16 / 16:9 / 3:4）与裁切/虚化构图可选。", codeName: "prompt", code: "把 ~/素材/农场 这批照片和视频剪一条 30 秒的成片，节奏轻快。" },
           { title: "看成片", desc: "成片和剪映草稿都在输出目录，你看一遍节奏；不满意就说哪一段，它重剪那一段。" }
         ]
       },
@@ -229,7 +229,7 @@ window.PROMO = {
         sub: "The agent runs the commands. You say what you want and check the result.",
         items: [
           { title: "Let your agent install it", desc: "Paste the line into the chat — it clones the repo, reads the docs, and tells you how to use it.", codeKey: "install" },
-          { title: "Give the footage dir and length", desc: "Missing footage? It digs for more. Got a BGM? It beat-matches first. Engine choice is its call.", codeName: "prompt", code: "Cut a 30-second clip from the photos and videos in ~/footage/farm — upbeat pacing." },
+          { title: "Give the footage dir and length", desc: "Missing footage? It digs for more. Got a BGM? It beat-matches first. Aspect (9:16 / 16:9 / 3:4) and crop-vs-blur fill are configurable.", codeName: "prompt", code: "Cut a 30-second clip from the photos and videos in ~/footage/farm — upbeat pacing." },
           { title: "Watch the cut", desc: "The video and a JianYing draft land in the output dir — watch it once. Don't like a segment? Name it and it re-cuts just that part." }
         ]
       },
