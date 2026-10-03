@@ -19,7 +19,7 @@ window.PROMO = {
     zh: {
       meta: {
         title: "ISKILL-VIDEO-CLIPPER · 实拍素材剪成短视频",
-        description: "照片 + 视频混合 → 15-60s 成片或剪映草稿：三档素材引擎 local / aigc-mix / aigc-full，有 BGM 自动分析节拍、转场卡点，内置免费商用字体，全流程本地 ffmpeg。"
+        description: "照片 + 视频混合 → 15-60s 成片或剪映草稿：素材引擎 local / aigc-mix / aigc-full + mpt 快速草稿档，有 BGM 自动分析节拍、转场卡点，内置免费商用字体，全流程本地 ffmpeg。"
       },
       a11y: { skip: "跳到主要内容" },
       ui: { copy: "复制", copied: "已复制", failed: "复制失败" },
@@ -87,7 +87,7 @@ window.PROMO = {
         sub: "",
         items: [
           { icon: "camera", title: "先侦察，再剪辑", desc: "Phase 1 对每条视频抽 20%/50%/80% 三帧、照片拼 5×5 看板，先产出「素材 → 主题」映射表，绝不在没看过素材前动手。" },
-          { icon: "layers", title: "三档素材引擎", desc: "<code>--engine local</code>（默认，全免费）/ <code>aigc-mix</code>（缺镜 AI 补，计费事前确认）/ <code>aigc-full</code>（无实拍全量 AI 生成）；素材从 raw/ → dig-media/ → AI 多级回退。" },
+          { icon: "layers", title: "素材引擎三档 + mpt 草稿档", desc: "<code>--engine local</code>（默认，全免费）/ <code>aigc-mix</code>（缺镜 AI 补，计费事前确认）/ <code>aigc-full</code>（无实拍全量 AI 生成）；素材从 raw/ → dig-media/ → AI 多级回退。另有 <code>mpt</code> 快速草稿档：MoneyPrinterTurbo 整片合成，未过三道门禁须标注。" },
           { icon: "gauge", title: "BGM 卡点转场（硬门禁）", desc: "有 BGM 时自动调 iskill-music-beats 出 <code>beats.json</code>：段长取整到节拍、转场中心落拍，验收要求偏差 ≤ 0.1s——<b>没做卡点不得交付</b>。" },
           { icon: "bolt", title: "GPU shader 转场（默认档）", desc: "默认 <code>gl</code> 档走 HyperFrames + WebGL 逐帧渲染独立转场片段，钩子后 / 情绪高潮 / CTA 前<b>三个关键点必须实做</b>；仅在无 Chrome/WebGL 或单点失败时降级 <code>xfade</code>，<b>全程硬切须在交付中注明原因</b>，单点降级不打回整片。" },
           { icon: "crop", title: "封面 + 内置字体", desc: "默认从分镜原图截帧（避开成片字幕）出 1080×1920 封面、可叠标题字；内置 4 款免费可商用字体，按气质选型。" },
@@ -140,7 +140,7 @@ window.PROMO = {
     en: {
       meta: {
         title: "ISKILL-VIDEO-CLIPPER · Cut footage into a short video",
-        description: "Photos plus video into a 15–60s cut or a JianYing draft: three source engines local / aigc-mix / aigc-full, automatic beat detection to land cuts on the beat, free commercial fonts bundled, all local ffmpeg."
+        description: "Photos plus video into a 15–60s cut or a JianYing draft: source engines local / aigc-mix / aigc-full plus an mpt fast-draft tier, automatic beat detection to land cuts on the beat, free commercial fonts bundled, all local ffmpeg."
       },
       a11y: { skip: "Skip to content" },
       ui: { copy: "Copy", copied: "Copied", failed: "Copy failed" },
@@ -208,7 +208,7 @@ window.PROMO = {
         sub: "",
         items: [
           { icon: "camera", title: "Scout before you cut", desc: "Phase 1 samples three frames (20/50/80%) per clip and tiles photos into a 5×5 sheet, producing a footage→theme map so nothing is edited blind." },
-          { icon: "layers", title: "Three source engines", desc: "<code>--engine local</code> (default, free) / <code>aigc-mix</code> (AI fills the gaps, cost confirmed up front) / <code>aigc-full</code> (all AI, no footage). Sources fall back raw/ → dig-media/ → AI." },
+          { icon: "layers", title: "Three source engines + mpt draft tier", desc: "<code>--engine local</code> (default, free) / <code>aigc-mix</code> (AI fills the gaps, cost confirmed up front) / <code>aigc-full</code> (all AI, no footage). Sources fall back raw/ → dig-media/ → AI. Plus an <code>mpt</code> fast-draft tier: full composition by MoneyPrinterTurbo, labelled as not passing the three gates." },
           { icon: "gauge", title: "Cuts that land on the beat (hard gate)", desc: "With BGM it calls iskill-music-beats for a <code>beats.json</code>: segment lengths round to the beat, transition centres snap to beats, acceptance requires ≤ 0.1s deviation — <b>no beat sync, no delivery</b>." },
           { icon: "bolt", title: "GPU shader transitions (default tier)", desc: "The default <code>gl</code> tier renders standalone transition clips with HyperFrames + WebGL; the <b>three key points</b> (post-hook, emotional peak, pre-CTA) must be real. Per-point <code>xfade</code> fallback only when Chrome/WebGL is missing or a point fails — <b>an all-hard-cut delivery must state why</b>." },
           { icon: "crop", title: "Covers and bundled fonts", desc: "Covers default to a 1080×1920 frame cropped from source stills (avoiding baked-in subtitles) with optional title text; four free commercial fonts ship in-repo." },
