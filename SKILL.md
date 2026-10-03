@@ -1,6 +1,6 @@
 ---
 name: iskill-video-clipper
-description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿），双引擎：--engine local 程序化合成（默认）/ aigc-mix 混合（缺镜 AI 补）/ aigc-full 全 AI。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/（图库）→ AIGC 补镜多级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。转场默认 gl 档（HyperFrames GPU shader 转场，详见 reference/gpu-transitions.md），xfade 为回退。全流程本地 ffmpeg，免费无付费环节（AIGC 档除外，计费且事前确认）。
+description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片/剪映草稿），双引擎：--engine local 程序化合成（默认）/ aigc-mix 混合（缺镜 AI 补）/ aigc-full 全 AI；另有 --engine mpt 快速草稿档（MoneyPrinterTurbo 整片合成，未过门禁须标注）。两种入口：①独立剪辑——用户要求"剪视频/切条/做成片/活动视频剪辑"并给素材目录；②六步爆款工作流第 6 步——输入 viral-video-team-output/文案/ 下的定稿口播稿（v2）+ 预检通过的选题，字幕用定稿文案、按需配音对齐，产出成片或剪映工程。素材支持零输入：raw/ → dig-media/（图库）→ AIGC 补镜多级回退。有 BGM 时自动调 iskill-music-beats 分析节拍点，转场卡在节拍上。转场默认 gl 档（HyperFrames GPU shader 转场，详见 reference/gpu-transitions.md），xfade 为回退。全流程本地 ffmpeg，免费无付费环节（AIGC/MPT AI 源除外，计费且事前确认）。
 ---
 
 # iskill-video-clipper 实拍素材短视频剪辑
@@ -16,6 +16,8 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 - `local`（默认）：实拍 + 图库，全免费，现状流程
 - `aigc-mix`：免费素材优先，缺的镜头按 iskill-dig-media「AI 生成供给」协议补（计费、事前确认）
 - `aigc-full`：无实拍，口播稿逐段 prompt 化全量 AI 生成（计费最高、必须逐次确认）
+
+**`mpt` 快速草稿档（与上面三档不同层——三档是「素材从哪来」，mpt 是「换一台合成机」）**：整片交给 MoneyPrinterTurbo 合成——我们的成稿用 `--video-script`、配音用 `--custom-audio-file`、素材用 `--video-source local --video-materials <逗号分隔路径>` 喂它（2026-10-03 零 key 实测全链路可跑，1m15s 出 1080×1920）。**它未过三道门禁：无 blur-fill（横屏源被 cover 腰斩）、无节拍卡点、CLI 字幕是坏的（subtitle maker missing）**——字幕须由我们自己生成后并入，或明确告知用户无字幕。**交付必须标注 `engine=mpt 草稿档，未过 gl 转场/节拍卡点/关联性三道门禁`，只用于快速预览与内部草稿，不得冒充主交付档**。详见 iskill-dig-media「MPT 聚合素材档」与 clipper 仓 `docs/MoneyPrinterTurbo-接入调研.md`。
 
 **按用途分流（与引擎档位正交，防误判）**：用户指定「封面用AI」「标题卡用AI」「其他不要AI」这类**单点 AI 约束**时——引擎保持 `local`（成片画面不引入 AI），仅指定用途单独走 iskill-dig-media「AI 生成供给」的 ai-image 协议（credits 事前确认）。**不要因为出现「AI」关键词就提升引擎档位**；约束原文记入分镜表备注，交付时注明「仅 X 为 AI 生成」。
 
@@ -82,6 +84,7 @@ description: 实拍素材短视频剪辑（照片+视频混合 → 15-60s 成片
 ```
 
 - **混用规则**：raw/ 素材优先入片，dig-media/ 补空缺镜头（空镜/氛围镜最适合用网络素材）。
+- **多源补镜备选**：图库命中差、又不想用会话 AI 工具时，可走 iskill-dig-media「MPT 聚合素材档」——一个入口聚合 Pexels/Coverr + 6+ 家 AI 文生视频（AI 源计费事前确认），素材回填 dig-media/ 后仍由本 skill 出片。
 - **标注义务**：成片使用了 dig-media 素材时，交付信息里注明「部分素材来自 Pixabay（可商用免署名），manifest.json 可溯源」。
 - **零素材样片**：`--engine local` 下 raw/、dig-media/ 全无且挖掘失败时，明确告知用户卡在哪一级并给出补救动作（含「可改用 --engine aigc-mix 让 AI 补镜」的提示），不要凭空编造素材硬拼。
 - dig-media 下载是网络重活，批量走后台执行（run_in_background）。
