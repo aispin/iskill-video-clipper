@@ -424,3 +424,15 @@ proj.save()
 
 ### capcut-mate 评估结论（未采用）
 FastAPI 服务型项目（需常驻本地服务或 Docker，依赖 COS/OSS/TOS 云 SDK），云渲染导出走作者云服务（jcaigc.cn）。适合 Coze/n8n 平台工作流场景；本地 Agent 场景下 jianying-editor-skill 直写草稿更轻。若未来要接 Coze/n8n 或云端渲染再启用。
+
+## 依赖同步
+
+本仓库 `promo-page/assets/{app.js,style.css,icons.js}` 是 [iskill-promo-page](https://github.com/aispin/iskill-promo-page)
+模板引擎的 vendored 副本（锁定版本见 `package.json` 的 `iskillDeps`），**不要手改**——
+去真源仓库改并升 `@iskill-version`，再用 iskill-dep-sync 同步回来（本机无该工具时按下面自举）：
+
+```bash
+T="$HOME/.workbuddy/skills/iskill-dep-sync/scripts/skill-deps.mjs"
+[ -f "$T" ] || { TMP="$(mktemp -d)"; curl -fsSL "https://raw.githubusercontent.com/aispin/iskill-dep-sync/HEAD/scripts/skill-deps.mjs" -o "$TMP/skill-deps.mjs"; T="$TMP/skill-deps.mjs"; }
+node "$T" check "$(pwd)"     # 漂移检测；node "$T" sync "$(pwd)" 恢复/升级；node "$T" env "$(pwd)" 冷启动自检
+```
